@@ -8,9 +8,19 @@ const qrcode = require('qrcode');
 const multer = require('multer');
 const { removeBackground } = require('@imgly/background-removal-node');
 const Jimp = require('jimp');
+const config = require('./config');
 
 const FRAME_DIR = path.join(__dirname, 'public/frames');
+const PHOTOS_DIR = path.join(__dirname, 'public/photos'); // Directorio de fotos
 const FRAMES_JSON_PATH = path.join(__dirname, 'frames.json');
+
+// Asegurarse de que los directorios existan
+if (!fs.existsSync(FRAME_DIR)) {
+    fs.mkdirSync(FRAME_DIR, { recursive: true });
+}
+if (!fs.existsSync(PHOTOS_DIR)) {
+    fs.mkdirSync(PHOTOS_DIR, { recursive: true });
+}
 
 // Helper function to read/write frames.json
 const readFramesData = () => {
@@ -58,6 +68,7 @@ syncFrames();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/photos', express.static(path.join(__dirname, 'public/photos'))); // Servir fotos estáticamente
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -98,6 +109,26 @@ app.get('/frames', (req, res) => {
     const framesData = readFramesData();
     const availableFrames = framesData.filter(f => f.available).map(f => f.name);
     res.json(availableFrames);
+});
+
+// Endpoint to get the list of photos
+app.get('/photos', (req, res) => {
+    try {
+        const photoFiles = fs.readdirSync(PHOTOS_DIR)
+            .filter(file => /\.(jpg|jpeg|png|gif)$/i.test(file)) // Filtrar por extensiones de imagen
+            .map(file => ({
+                name: file,
+                time: fs.statSync(path.join(PHOTOS_DIR, file)).mtime.getTime()
+            }))
+            .sort((a, b) => b.time - a.time) // Ordenar por fecha de modificación (más recientes primero)
+            .slice(0, 100) // Limitar a los últimos 100
+            .map(file => file.name); // Devolver solo los nombres
+
+        res.json(photoFiles);
+    } catch (error) {
+        console.error('Error reading photos directory:', error);
+        res.status(500).json({ success: false, message: 'Could not retrieve photos.' });
+    }
 });
 
 // --- Admin Endpoints ---
@@ -220,18 +251,38 @@ app.post('/capture', upload.single('photo'), async (req, res) => {
             return res.status(400).json({ success: false, message: `Frame file ${frame} not found.` });
         }
 
-        const photoMetadata = await sharp(photoPath).metadata();
+        const photoBuffer = fs.readFileSync(photoPath);
+        const frameBuffer = fs.readFileSync(framePath);
 
-        await sharp(photoPath)
-            .composite([{ 
-                input: await sharp(framePath)
-                                .resize(photoMetadata.width, photoMetadata.height)
-                                .toBuffer(), 
-                gravity: 'center' 
-            }])
+        const outputWidth = 1080;
+        const outputHeight = 1350;
+
+        // 1. Create the blurred background
+        const background = await sharp(photoBuffer)
+            .resize(outputWidth, outputHeight, { fit: 'cover' })
+            .blur(50) // Heavy blur
+            .toBuffer();
+
+        // 2. Resize the main photo to fit within the output dimensions
+        const mainPhoto = await sharp(photoBuffer)
+            .resize(outputWidth, outputHeight, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+            .toBuffer();
+        
+        // 3. Resize the frame to fit within the output dimensions
+        const resizedFrame = await sharp(frameBuffer)
+            .resize(outputWidth, outputHeight, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+            .toBuffer();
+
+        // 4. Composite everything: background, then main photo, then frame
+        await sharp(background)
+            .composite([
+                { input: mainPhoto, gravity: 'center' },
+                { input: resizedFrame, gravity: 'center' }
+            ])
             .toFile(outputPath);
 
-        fs.unlinkSync(photoPath); // remove original photo
+        // Remove temporary uploaded photo
+        fs.unlinkSync(photoPath);
 
         const finalUrl = `${req.protocol}://${req.get('host')}/photos/${path.basename(outputPath)}`;
 

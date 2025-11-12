@@ -16,23 +16,22 @@
         </div>
 
         <div id="admin-content">
+            <!-- Theme Settings -->
+            <div class="admin-section">
+                <h2>Theme Settings</h2>
+                <div class="theme-switcher">
+                    <span>Dark Mode</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="theme-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
             <!-- Frame Management -->
             <div class="admin-section">
                 <h2>Existing Frames</h2>
                 <div id="frames-list"></div>
-            </div>
-
-            <!-- Nano Banana Creator -->
-            <div class="admin-section">
-                <h2>Nano Banana Frame Creator</h2>
-                <div class="form-group">
-                    <input type="text" id="frame-text" placeholder="Enter frame text...">
-                    <input type="color" id="frame-color" value="#FFD700">
-                </div>
-                <canvas id="frame-preview" width="400" height="400"></canvas>
-                <div class="btn-group">
-                    <button id="save-frame" class="btn-main">Save Frame</button>
-                </div>
             </div>
 
             <!-- Upload Frame -->

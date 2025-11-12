@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiosco Fotográfico Temático</title>
+    <link rel="stylesheet" href="vendor/sweetalert2.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="img/logo-OBS.png" alt="Logo OBS" class="logo">
+            <h1>📸 Kiosco Fotográfico 📸</h1>
+            <p>¡Crea tu propio recuerdo fotográfico temático!</p>
+        </div>
+
+        <!-- Carrusel de Imágenes -->
+        <div class="carousel-container">
+            <div class="carousel">
+                <!-- Las imágenes se cargarán aquí -->
+            </div>
+        </div>
+
+        <style>
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+        .carousel {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
+        .carousel img {
+            width: 100%;
+            height: auto;
+        }
+        </style>
+
+        <script>
+        const images = [];
+        const carousel = document.querySelector('.carousel'); // Definir el carrusel
+
+        // Cargar imágenes de la carpeta 'photos'
+fetch('photos/')
+    .then(response => response.text())
+    .then(data => {
+        const parser = new DOMParser();
+        const htmlDocument = parser.parseFromString(data, 'text/html');
+        const imgElements = htmlDocument.querySelectorAll('a');
+        imgElements.forEach(link => {
+            const imgSrc = link.getAttribute('href');
+            if (imgSrc.endsWith('.jpg') || imgSrc.endsWith('.png')) {
+                images.push('photos/' + imgSrc);
+            }
+        });
+        loadImages();
+    });
+
+        function loadImages() {
+            images.forEach(image => {
+                const imgElement = document.createElement('img');
+                imgElement.src = image;
+                imgElement.style.opacity = 0; // Inicialmente oculto
+                carousel.appendChild(imgElement);
+                // Efecto de desvanecimiento
+                setTimeout(() => {
+                    imgElement.style.transition = 'opacity 1s';
+                    imgElement.style.opacity = 1;
+                }, 1000 * images.indexOf(image)); // Desvanecer lentamente
+            });
+        }
+
+        let currentIndex = 0;
+        setInterval(() => {
+            currentIndex = (currentIndex + 1) % images.length;
+            carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
+        }, 3000);
+        </script>
+
+        <!-- 1. Menú Principal -->
+        <div id="main-menu">
+            <h2>Paso 1: Elige tu marco favorito</h2>
+            <p>Selecciona el marco que más te guste para tu foto.</p>
+            <div id="frames-container-main"></div>
+            <button id="start-camera" class="btn-main" disabled>Tomar Foto</button>
+        </div>
+
+        <!-- 2. Vista de la Cámara -->
+        <div id="camera-view" class="hidden">
+            <h2>Paso 2: ¡Sonríe y captura tu foto!</h2>
+            <p>Asegúrate de estar bien iluminado y centrado en la pantalla.</p>
+            <div class="camera-wrapper">
+                <video id="video" autoplay></video>
+                <div id="frame-overlay"></div>
+            </div>
+            <button id="capture-photo" class="btn-capture">Capturar</button>
+            <canvas id="canvas" class="hidden"></canvas>
+        </div>
+
+        <!-- 3. Opciones de Salida -->
+        <div id="output-options" class="hidden">
+            <h2>¡Tu foto está lista!</h2>
+            <p>Ahora puedes enviarla a tu correo o descargarla con un código QR.</p>
+            <img id="final-photo" src="" alt="Tu foto final">
+            <div class="options">
+                <div class="email-option">
+                    <input type="email" id="email" placeholder="Ingresa tu correo electrónico">
+                    <button id="send-email" class="btn-main">Enviar por Correo</button>
+                </div>
+                <div class="qr-option">
+                    <button id="get-qr" class="btn-secondary">Obtener Código QR</button>
+                    <div id="qr-code-container"></div>
+                </div>
+            </div>
+            <button id="retake-photo" class="btn-secondary">Tomar Otra Foto</button>
+        </div>
+        <a href="/carousel.html" class="gallery-link">Ver Galería</a>
+    </div>
+    <script src="vendor/sweetalert2.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

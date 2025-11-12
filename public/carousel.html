@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrusel de Fotos</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
+    <style>
+        body {
+            background: var(--background-gradient, linear-gradient(135deg, #004C97 0%, #0071BC 100%));
+        }
+        .swiper-container {
+            width: 100%;
+            height: 80vh;
+            padding-top: 50px;
+            padding-bottom: 50px;
+        }
+        .swiper-slide {
+            background-position: center;
+            background-size: cover;
+            width: 300px;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .swiper-slide .polaroid {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 10px 10px 20px 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+            width: auto;
+            height: auto;
+            cursor: pointer;
+        }
+        .swiper-slide .polaroid.zoomed {
+            transform: scale(2.5) rotate(0deg) !important;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            z-index: 100;
+            position: relative;
+        }
+        .swiper-slide .polaroid:hover {
+            transform: scale(1.05) rotate(0deg) !important;
+        }
+        .swiper-slide img {
+            display: block;
+            max-width: 250px;
+            max-height: 250px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+        .swiper-slide:nth-child(2n) .polaroid {
+            transform: rotate(5deg);
+        }
+        .swiper-slide:nth-child(3n) .polaroid {
+            transform: rotate(-5deg);
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 1rem;
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            text-align: center;
+            width: 100%;
+            background-color: var(--primary-color, #004C97);
+            padding: 10px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Galería de Fotos Recientes</h1>
+        </div>
+        <div class="swiper-container">
+            <div class="swiper-wrapper">
+                <!-- Las imágenes se cargarán aquí -->
+            </div>
+            <!-- Add Pagination -->
+            <div class="swiper-pagination"></div>
+            <!-- Add Navigation -->
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+        </div>
+        <a href="/" class="back-link">Volver al Kiosco</a>
+    </div>
+
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    <script src="carousel.js"></script>
+</body>
+</html>

@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <input type="checkbox" ${frame.available ? 'checked' : ''} data-name="${frame.name}">
                         <span class="slider"></span>
                     </label>
+                    <button class="btn-edit" data-name="${frame.name}">Edit</button>
                     <button class="btn-delete" data-name="${frame.name}">Delete</button>
                     <button class="btn-remove-bg" data-name="${frame.name}">Remove BG</button>
                 </div>
@@ -134,62 +135,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 Swal.fire('Error!', 'Could not remove the background.', 'error');
             }
         }
-    });
 
-    // --- Frame Creator (Nano Banana) ---
-    const saveFrameButton = document.getElementById('save-frame');
-    const frameTextInput = document.getElementById('frame-text');
-    const frameColorInput = document.getElementById('frame-color');
-    const framePreview = document.getElementById('frame-preview');
-    const framePreviewCtx = framePreview.getContext('2d');
+        // Edit frame
+        if (target.matches('.btn-edit')) {
+            const { value: file } = await Swal.fire({
+                title: `Update ${frameName}`,
+                text: 'Upload a new PNG file to replace the existing frame.',
+                input: 'file',
+                inputAttributes: {
+                    'accept': 'image/png',
+                    'aria-label': 'Upload your frame'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Upload'
+            });
 
-    function drawFramePreview() {
-        const text = frameTextInput.value || "Nano Banana!";
-        const color = frameColorInput.value;
-        const width = framePreview.width;
-        const height = framePreview.height;
+            if (file) {
+                const formData = new FormData();
+                // Use the original frame name to overwrite it
+                formData.append('frame', file, frameName);
 
-        framePreviewCtx.clearRect(0, 0, width, height);
-        framePreviewCtx.strokeStyle = color;
-        framePreviewCtx.lineWidth = 20;
-        framePreviewCtx.strokeRect(0, 0, width, height);
+                const response = await fetch('/save-frame', {
+                    method: 'POST',
+                    body: formData
+                });
 
-        framePreviewCtx.fillStyle = color;
-        framePreviewCtx.font = 'bold 30px sans-serif';
-        framePreviewCtx.textAlign = 'center';
-        framePreviewCtx.fillText(text, width / 2, 50);
-    }
-
-    frameTextInput.addEventListener('input', drawFramePreview);
-    frameColorInput.addEventListener('input', drawFramePreview);
-
-    saveFrameButton.addEventListener('click', async () => {
-        const { value: frameName } = await Swal.fire({
-            title: 'Enter Frame Name',
-            input: 'text',
-            inputPlaceholder: 'e.g., banana-frame.png',
-            showCancelButton: true,
-        });
-
-        if (!frameName) return;
-
-        const dataUrl = framePreview.toDataURL('image/png');
-        const blob = await (await fetch(dataUrl)).blob();
-
-        const formData = new FormData();
-        formData.append('frame', blob, frameName.endsWith('.png') ? frameName : `${frameName}.png`);
-
-        const response = await fetch('/save-frame', {
-            method: 'POST',
-            body: formData
-        });
-
-        const result = await response.json();
-        if (result.success) {
-            Swal.fire('Success!', 'Frame saved successfully.', 'success');
-            loadFrames(); // Refresh the list
-        } else {
-            Swal.fire('Error', 'Could not save the frame.', 'error');
+                if (response.ok) {
+                    Swal.fire('Success!', 'Frame updated successfully.', 'success');
+                    loadFrames(); // Refresh to show the new image
+                } else {
+                    Swal.fire('Error!', 'Could not update the frame.', 'error');
+                }
+            }
         }
     });
 
@@ -223,8 +200,32 @@ document.addEventListener('DOMContentLoaded', () => {
         frameUploadInput.value = '';
     });
 
-    // Initial password check
+    // --- Theme Management ---
+    const themeToggle = document.getElementById('theme-toggle');
+
+    const applyTheme = (theme) => {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-theme');
+            themeToggle.checked = true;
+        } else {
+            document.body.classList.remove('dark-theme');
+            themeToggle.checked = false;
+        }
+    };
+
+    const loadTheme = () => {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        applyTheme(savedTheme);
+    };
+
+    themeToggle.addEventListener('change', () => {
+        const newTheme = themeToggle.checked ? 'dark' : 'light';
+        localStorage.setItem('theme', newTheme);
+        applyTheme(newTheme);
+    });
+
+    // Initial setup
+    loadTheme();
     checkPassword();
-    drawFramePreview();
     loadFrames();
 });

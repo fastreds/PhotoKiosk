@@ -1,20 +1,71 @@
+:root {
+    --bg-color: #f9f9f9;
+    --text-color: #333;
+    --section-bg-color: #f9f9f9;
+    --section-border-color: #ddd;
+    --frame-bg-color: #fff;
+    --frame-border-color: #ccc;
+    --link-color: #5bc0de;
+    --btn-delete-color: #d9534f;
+    --btn-delete-hover-bg: #d9534f;
+    --btn-remove-bg-color: #5bc0de;
+    --btn-remove-bg-hover-bg: #5bc0de;
+    --slider-bg-color: #ccc;
+    --slider-checked-bg-color: #d9534f;
+    --swal-bg: #fff;
+    --swal-title-color: #595959;
+    --swal-content-color: #545454;
+    --swal-input-bg: #fff;
+    --swal-input-border-color: #d9d9d9;
+    --swal-input-color: #545454;
+}
+
+body.dark-theme {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --section-bg-color: #1e1e1e;
+    --section-border-color: #333;
+    --frame-bg-color: #2a2a2a;
+    --frame-border-color: #444;
+    --link-color: #87ceeb;
+    --btn-delete-color: #f44336;
+    --btn-delete-hover-bg: #f44336;
+    --btn-remove-bg-color: #03a9f4;
+    --btn-remove-bg-hover-bg: #03a9f4;
+    --slider-bg-color: #555;
+    --slider-checked-bg-color: #f44336;
+    --swal-bg: #2a2a2a;
+    --swal-title-color: #e0e0e0;
+    --swal-content-color: #e0e0e0;
+    --swal-input-bg: #333;
+    --swal-input-border-color: #555;
+    --swal-input-color: #e0e0e0;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
 .admin-section {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
+    background-color: var(--section-bg-color);
+    border: 1px solid var(--section-border-color);
     border-radius: 10px;
     padding: 1.5rem;
     margin-bottom: 2rem;
+    transition: background-color 0.3s, border-color 0.3s;
 }
 
 .admin-section h2 {
     margin-top: 0;
-    color: #333;
+    color: var(--text-color);
 }
 
 .back-link {
     display: inline-block;
     margin-top: 2rem;
-    color: #5bc0de;
+    color: var(--link-color);
     text-decoration: none;
     font-weight: bold;
 }
@@ -30,18 +81,20 @@
 }
 
 .frame-item {
-    border: 1px solid #ccc;
+    border: 1px solid var(--frame-border-color);
     border-radius: 8px;
     padding: 1rem;
     text-align: center;
-    background: #fff;
+    background: var(--frame-bg-color);
 }
 
 .frame-item img {
-    max-width: 100%;
-    height: 100px;
+    width: 100%;
+    aspect-ratio: 4 / 5;
     object-fit: contain;
     margin-bottom: 10px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
 }
 
 .frame-item p {
@@ -70,7 +123,7 @@
     position: relative;
     width: 40px;
     height: 20px;
-    background-color: #ccc;
+    background-color: var(--slider-bg-color);
     border-radius: 20px;
     transition: background-color 0.3s;
 }
@@ -88,7 +141,7 @@
 }
 
 input:checked + .slider {
-    background-color: #d9534f;
+    background-color: var(--slider-checked-bg-color);
 }
 
 input:checked + .slider:before {
@@ -97,8 +150,8 @@ input:checked + .slider:before {
 
 .btn-delete {
     background: none;
-    border: 1px solid #d9534f;
-    color: #d9534f;
+    border: 1px solid var(--btn-delete-color);
+    color: var(--btn-delete-color);
     padding: 5px;
     border-radius: 5px;
     cursor: pointer;
@@ -106,14 +159,14 @@ input:checked + .slider:before {
 }
 
 .btn-delete:hover {
-    background: #d9534f;
+    background: var(--btn-delete-hover-bg);
     color: white;
 }
 
 .btn-remove-bg {
     background: none;
-    border: 1px solid #5bc0de;
-    color: #5bc0de;
+    border: 1px solid var(--btn-remove-bg-color);
+    color: var(--btn-remove-bg-color);
     padding: 5px;
     border-radius: 5px;
     cursor: pointer;
@@ -121,6 +174,40 @@ input:checked + .slider:before {
 }
 
 .btn-remove-bg:hover {
-    background: #5bc0de;
+    background: var(--btn-remove-bg-hover-bg);
     color: white;
+}
+
+.btn-edit {
+    background: none;
+    border: 1px solid var(--link-color);
+    color: var(--link-color);
+    padding: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn-edit:hover {
+    background: var(--link-color);
+    color: white;
+}
+
+.swal2-popup {
+    background-color: var(--swal-bg) !important;
+    color: var(--swal-content-color) !important;
+}
+
+.swal2-title {
+    color: var(--swal-title-color) !important;
+}
+
+.swal2-content {
+    color: var(--swal-content-color) !important;
+}
+
+.swal2-input {
+    background-color: var(--swal-input-bg) !important;
+    color: var(--swal-input-color) !important;
+    border-color: var(--swal-input-border-color) !important;
 }
