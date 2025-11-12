@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Frame Management</title>
+    <link rel="stylesheet" href="vendor/sweetalert2.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🖼️ Frame Management 🖼️</h1>
+            <p>Add or create new frames for the kiosk.</p>
+        </div>
+
+        <div id="admin-content">
+            <!-- Frame Management -->
+            <div class="admin-section">
+                <h2>Existing Frames</h2>
+                <div id="frames-list"></div>
+            </div>
+
+            <!-- Nano Banana Creator -->
+            <div class="admin-section">
+                <h2>Nano Banana Frame Creator</h2>
+                <div class="form-group">
+                    <input type="text" id="frame-text" placeholder="Enter frame text...">
+                    <input type="color" id="frame-color" value="#FFD700">
+                </div>
+                <canvas id="frame-preview" width="400" height="400"></canvas>
+                <div class="btn-group">
+                    <button id="save-frame" class="btn-main">Save Frame</button>
+                </div>
+            </div>
+
+            <!-- Upload Frame -->
+            <div class="admin-section">
+                <h2>Upload Custom Frame</h2>
+                <p>Choose a transparent PNG file to use as a frame.</p>
+                <button id="upload-frame-btn" class="btn-secondary">Upload Frame</button>
+                <input type="file" id="frame-upload-input" class="hidden" accept="image/png">
+            </div>
+        </div>
+        <a href="/" class="back-link">Back to Kiosk</a>
+    </div>
+
+    <script src="vendor/sweetalert2.min.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+.admin-section {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.admin-section h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 2rem;
+    color: #5bc0de;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+#frames-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1.5rem;
+}
+
+.frame-item {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    background: #fff;
+}
+
+.frame-item img {
+    max-width: 100%;
+    height: 100px;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+
+.frame-item p {
+    word-break: break-all;
+    margin-bottom: 10px;
+}
+
+.frame-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.toggle-switch input {
+    display: none;
+}
+
+.slider {
+    position: relative;
+    width: 40px;
+    height: 20px;
+    background-color: #ccc;
+    border-radius: 20px;
+    transition: background-color 0.3s;
+}
+
+.slider:before {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: white;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s;
+}
+
+input:checked + .slider {
+    background-color: #d9534f;
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+.btn-delete {
+    background: none;
+    border: 1px solid #d9534f;
+    color: #d9534f;
+    padding: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn-delete:hover {
+    background: #d9534f;
+    color: white;
+}
+
+.btn-remove-bg {
+    background: none;
+    border: 1px solid #5bc0de;
+    color: #5bc0de;
+    padding: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn-remove-bg:hover {
+    background: #5bc0de;
+    color: white;
+}
