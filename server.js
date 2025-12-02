@@ -1,16 +1,35 @@
-require('dotenv').config();
 const express = require('express');
-const app = express();
+const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const sharp = require('sharp');
 const nodemailer = require('nodemailer');
+const sharp = require('sharp');
+const dotenv = require('dotenv');
 const qrcode = require('qrcode');
-const multer = require('multer');
 const { removeBackground } = require('@imgly/background-removal-node');
-
 const Jimp = require('jimp');
 
+// Load environment variables
+// Priority: 
+// 1. System Environment Variables (Render Dashboard)
+// 2. /etc/secrets/.env (Render Secret File)
+// 3. .env (Local Development)
+
+const secretEnvPath = '/etc/secrets/.env';
+if (fs.existsSync(secretEnvPath)) {
+    console.log(`Loading environment variables from ${secretEnvPath}`);
+    dotenv.config({ path: secretEnvPath });
+} else {
+    console.log("Loading environment variables from local .env (if exists)");
+    dotenv.config();
+}
+
+// Debug logging for credentials (masked)
+const emailUser = process.env.EMAIL_USER;
+const emailPass = process.env.EMAIL_PASS;
+console.log(`Email Config Status: User=${emailUser ? 'SET' : 'MISSING'}, Pass=${emailPass ? 'SET' : 'MISSING'}`);
+
+const app = express();
 const FRAME_DIR = path.join(__dirname, 'public/frames');
 const PHOTOS_DIR = path.join(__dirname, 'public/photos'); // Directorio de fotos
 const FRAMES_JSON_PATH = path.join(__dirname, 'frames.json');
@@ -163,6 +182,25 @@ app.delete('/admin/delete-frame', (req, res) => {
     } else {
         syncFrames(); // Resync even if file not found, to clean up JSON
         res.status(404).json({ success: false, message: 'Frame not found' });
+    }
+});
+
+app.delete('/admin/delete-photo', (req, res) => {
+    const { name } = req.body;
+    // Basic sanitization to prevent directory traversal
+    const safeName = path.basename(name);
+    const filePath = path.join(PHOTOS_DIR, safeName);
+
+    if (fs.existsSync(filePath)) {
+        try {
+            fs.unlinkSync(filePath);
+            res.json({ success: true });
+        } catch (error) {
+            console.error("Error deleting photo:", error);
+            res.status(500).json({ success: false, message: 'Failed to delete photo' });
+        }
+    } else {
+        res.status(404).json({ success: false, message: 'Photo not found' });
     }
 });
 

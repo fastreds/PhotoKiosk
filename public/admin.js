@@ -360,6 +360,86 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- Photo Gallery Maintenance ---
+    const photoGalleryList = document.getElementById('photo-gallery-list');
+
+    const loadPhotoGallery = async () => {
+        try {
+            const response = await fetch('/photos');
+            const photos = await response.json();
+            photoGalleryList.innerHTML = '';
+
+            if (photos.length === 0) {
+                photoGalleryList.innerHTML = '<p>No photos found.</p>';
+                return;
+            }
+
+            photos.forEach(photoName => {
+                const photoCard = document.createElement('div');
+                photoCard.style.border = '1px solid #ddd';
+                photoCard.style.borderRadius = '8px';
+                photoCard.style.overflow = 'hidden';
+                photoCard.style.textAlign = 'center';
+                photoCard.style.background = '#fff';
+
+                const img = document.createElement('img');
+                img.src = `/photos/${photoName}`;
+                img.style.width = '100%';
+                img.style.height = '150px';
+                img.style.objectFit = 'cover';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.style.background = '#ff4444';
+                deleteBtn.style.color = 'white';
+                deleteBtn.style.border = 'none';
+                deleteBtn.style.padding = '5px 10px';
+                deleteBtn.style.margin = '10px';
+                deleteBtn.style.cursor = 'pointer';
+                deleteBtn.style.borderRadius = '4px';
+
+                deleteBtn.addEventListener('click', async () => {
+                    const result = await Swal.fire({
+                        title: 'Are you sure?',
+                        text: "You won't be able to revert this!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes, delete it!'
+                    });
+
+                    if (result.isConfirmed) {
+                        try {
+                            const response = await fetch('/admin/delete-photo', {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ name: photoName })
+                            });
+                            if (response.ok) {
+                                Swal.fire('Deleted!', 'Your file has been deleted.', 'success');
+                                loadPhotoGallery(); // Refresh gallery
+                            } else {
+                                Swal.fire('Error!', 'Failed to delete photo.', 'error');
+                            }
+                        } catch (error) {
+                            console.error("Error deleting photo:", error);
+                            Swal.fire('Error!', 'An error occurred.', 'error');
+                        }
+                    }
+                });
+
+                photoCard.appendChild(img);
+                photoCard.appendChild(deleteBtn);
+                photoGalleryList.appendChild(photoCard);
+            });
+
+        } catch (error) {
+            console.error("Error loading photo gallery:", error);
+            photoGalleryList.innerHTML = '<p>Error loading photos.</p>';
+        }
+    };
+
     // Initial setup
     loadTheme();
     checkPassword();
@@ -367,4 +447,5 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     loadEmailConfig();
     loadEmailLogs();
+    loadPhotoGallery();
 });
