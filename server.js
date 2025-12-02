@@ -369,10 +369,45 @@ app.post('/send-email', async (req, res) => {
     const { email, photoUrl } = req.body;
     const config = readEmailConfig();
 
-    try {
-        let transporter = nodemailer.createTransport(`smtps://${encodeURIComponent(process.env.EMAIL_USER)}:${process.env.EMAIL_PASS}@smtp.gmail.com:465`);
+    console.log(`Attempting to send email to ${email} with photo ${photoUrl}`);
 
-        const htmlContent = config.htmlTemplate.replace('{{photoUrl}}', photoUrl);
+    try {
+        // Use object syntax for better control
+        let transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true, // true for 465, false for other ports
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+            connectionTimeout: 10000, // 10 seconds timeout
+        });
+
+        // Convert URL to local path if possible to avoid self-request deadlock or network issues
+        let attachmentPath = photoUrl;
+        if (photoUrl.startsWith('http')) {
+            try {
+                const urlObj = new URL(photoUrl);
+                // Assuming the URL path maps to 'public' folder
+                // e.g. /photos/filename.png -> public/photos/filename.png
+                const relativePath = urlObj.pathname; // /photos/filename.png
+                // Remove leading slash
+                const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
+                const localPath = path.join(__dirname, 'public', cleanPath);
+
+                if (fs.existsSync(localPath)) {
+                    attachmentPath = localPath;
+                    console.log(`Using local file path: ${attachmentPath}`);
+                } else {
+                    console.warn(`Local file not found at ${localPath}, falling back to URL.`);
+                }
+            } catch (e) {
+                console.warn("Error parsing URL, using original:", e);
+            }
+        }
+
+        const htmlContent = config.htmlTemplate.replace('{{photoUrl}}', photoUrl); // Keep URL for HTML src
 
         let info = await transporter.sendMail({
             from: `"${config.senderName}" <${process.env.EMAIL_USER}>`,
@@ -382,7 +417,7 @@ app.post('/send-email', async (req, res) => {
             attachments: [
                 {
                     filename: 'photo.png',
-                    path: photoUrl
+                    path: attachmentPath
                 }
             ]
         });
@@ -410,7 +445,7 @@ app.post('/send-email', async (req, res) => {
             status: 'failed',
             error: error.message
         });
-        res.status(500).json({ success: false, message: 'Failed to send email' });
+        res.status(500).json({ success: false, message: 'Failed to send email: ' + error.message });
     }
 });
 

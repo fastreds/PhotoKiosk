@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const img = document.createElement('img');
                 img.src = `/photos/${photoName}`;
                 img.alt = 'Foto del carrusel';
-                
+
                 polaroid.appendChild(img);
                 slide.appendChild(polaroid);
                 swiperWrapper.appendChild(slide);
@@ -45,30 +45,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            // Initialize Swiper and assign it to the variable
+            // Initialize Swiper with Premium Settings
             swiper = new Swiper('.swiper-container', {
                 effect: 'coverflow',
                 grabCursor: true,
                 centeredSlides: true,
                 slidesPerView: 'auto',
+                initialSlide: 1, // Start a bit offset if needed, or 0
                 coverflowEffect: {
-                    rotate: 50,
+                    rotate: 20, // Reduced rotation for cleaner look
                     stretch: 0,
-                    depth: 100,
+                    depth: 200, // Increased depth for 3D feel
                     modifier: 1,
                     slideShadows: true,
                 },
                 loop: true,
+                speed: 800, // Slower transition speed
                 pagination: {
                     el: '.swiper-pagination',
+                    clickable: true,
                 },
                 navigation: {
                     nextEl: '.swiper-button-next',
                     prevEl: '.swiper-button-prev',
                 },
                 autoplay: {
-                    delay: 3000,
+                    delay: 4000, // Slower autoplay
                     disableOnInteraction: false,
+                    pauseOnMouseEnter: true, // Pause when hovering
+                },
+                keyboard: {
+                    enabled: true,
+                },
+                mousewheel: {
+                    thresholdDelta: 50,
+                    sensitivity: 1,
                 },
             });
 
