@@ -115,20 +115,46 @@
         <!-- 3. Opciones de Salida -->
         <div id="output-options" class="hidden">
             <h2>¡Tu foto está lista!</h2>
-            <p>Ahora puedes enviarla a tu correo o descargarla con un código QR.</p>
-            <img id="final-photo" src="" alt="Tu foto final">
-            <div class="options">
-                <div class="email-option">
-                    <input type="email" id="email" placeholder="Ingresa tu correo electrónico">
-                    <button id="send-email" class="btn-main">Enviar por Correo</button>
+            <p>Escanea el código QR para descargarla o envíala a tu correo.</p>
+
+            <div class="output-grid">
+                <div class="photo-preview">
+                    <img id="final-photo" src="" alt="Tu foto final">
                 </div>
-                <div class="qr-option">
-                    <button id="get-qr" class="btn-secondary">Obtener Código QR</button>
-                    <div id="qr-code-container"></div>
+
+                <div class="actions-panel">
+                    <!-- QR Section (Always Visible) -->
+                    <div class="qr-section">
+                        <h3>Descargar al Móvil</h3>
+                        <div id="qr-code-container"></div>
+                        <p class="small-text">Escanea para ver y descargar</p>
+                    </div>
+
+                    <!-- Email Section -->
+                    <div class="email-section">
+                        <h3>Enviar por Correo</h3>
+                        <div class="email-input-group">
+                            <input type="email" id="email" placeholder="tu@correo.com">
+                            <button id="send-email" class="btn-main">Enviar</button>
+                        </div>
+                    </div>
                 </div>
             </div>
+
             <button id="retake-photo" class="btn-secondary">Tomar Otra Foto</button>
         </div>
+
+        <!-- Sending Animation Overlay -->
+        <div id="sending-overlay" class="hidden">
+            <div class="sending-content">
+                <div class="paper-plane">✈️</div>
+                <h3>Enviando tu recuerdo...</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+            </div>
+        </div>
+
         <a href="/carousel.html" class="gallery-link">Ver Galería</a>
     </div>
     <script src="vendor/sweetalert2.min.js"></script>

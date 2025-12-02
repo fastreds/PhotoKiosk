@@ -203,6 +203,7 @@ async function sendPhotoToServer() {
             cameraView.classList.add('hidden');
             outputOptions.classList.remove('hidden');
             finalPhoto.src = result.url;
+            generateQrCode(); // Generate QR immediately
         } else {
             throw new Error(result.message || 'Error desconocido durante el procesamiento.');
         }
@@ -270,19 +271,35 @@ async function sendEmail() {
         return;
     }
 
+    // Show animation
+    const sendingOverlay = document.getElementById('sending-overlay');
+    const progressBar = document.querySelector('.progress-fill');
+    sendingOverlay.classList.remove('hidden');
+    progressBar.style.width = '0%';
+
+    // Animate progress bar over 5 seconds
+    setTimeout(() => progressBar.style.width = '100%', 100);
+
     try {
+        // Wait 5 seconds for animation effect
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
         const response = await fetch('/send-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, photoUrl: finalPhoto.src })
         });
         const result = await response.json();
+
+        sendingOverlay.classList.add('hidden');
+
         if (result.success) {
             Swal.fire('¡Correo Enviado!', 'Tu foto ha sido enviada exitosamente.', 'success');
         } else {
             throw new Error(result.message || 'Error desconocido al enviar el correo.');
         }
     } catch (error) {
+        sendingOverlay.classList.add('hidden');
         console.error("Error sending email:", error);
         Swal.fire('¡Error!', 'No se pudo enviar el correo. Por favor, intenta de nuevo.', 'error');
     }
@@ -293,7 +310,11 @@ async function sendEmail() {
  */
 async function generateQrCode() {
     try {
-        const response = await fetch(`/qr-code?photoUrl=${encodeURIComponent(finalPhoto.src)}`);
+        // Point to the download page instead of the direct image
+        const downloadUrl = `${window.location.origin}/download.html?photo=${encodeURIComponent(finalPhoto.src)}`;
+        // Use a QR code API that returns an image directly or use the backend
+        // Here we use the backend endpoint but pass the download URL
+        const response = await fetch(`/qr-code?photoUrl=${encodeURIComponent(downloadUrl)}`);
         if (!response.ok) throw new Error('Failed to fetch QR code.');
         const qrCodeHtml = await response.text();
         qrCodeContainer.innerHTML = qrCodeHtml;
@@ -339,7 +360,7 @@ function resetToMainMenu() {
 startCameraButton.addEventListener('click', showPrivacyNotice);
 capturePhotoButton.addEventListener('click', captureAndProcessPhoto);
 sendEmailButton.addEventListener('click', sendEmail);
-getQrButton.addEventListener('click', generateQrCode);
+// getQrButton.addEventListener('click', generateQrCode); // Removed button
 retakePhotoButton.addEventListener('click', resetToMainMenu);
 
 // --- 5. Initial Load ---

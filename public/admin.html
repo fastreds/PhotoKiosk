@@ -57,6 +57,45 @@
                 <button id="upload-frame-btn" class="btn-secondary">Upload Frame</button>
                 <input type="file" id="frame-upload-input" class="hidden" accept="image/png">
             </div>
+
+            <!-- Email Configuration -->
+            <div class="admin-section">
+                <h2>Email Configuration</h2>
+                <div class="setting-item">
+                    <label>Sender Name:</label>
+                    <input type="text" id="email-sender-name" placeholder="Photo Kiosk">
+                </div>
+                <div class="setting-item">
+                    <label>Email Subject:</label>
+                    <input type="text" id="email-subject" placeholder="Your Photo!">
+                </div>
+                <div class="setting-item">
+                    <label>HTML Template (Use {{photoUrl}} for image):</label>
+                    <textarea id="email-template" rows="5"
+                        style="width: 100%; padding: 10px; border-radius: 5px;"></textarea>
+                </div>
+                <button id="save-email-config-btn" class="btn-main">Save Email Config</button>
+            </div>
+
+            <!-- Email Logs -->
+            <div class="admin-section">
+                <h2>Email Logs</h2>
+                <div style="overflow-x: auto;">
+                    <table id="email-logs-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f0f0f0; text-align: left;">
+                                <th style="padding: 10px;">Date</th>
+                                <th style="padding: 10px;">Email</th>
+                                <th style="padding: 10px;">Status</th>
+                                <th style="padding: 10px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Logs will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
         <a href="/" class="back-link">Back to Kiosk</a>
     </div>

@@ -264,9 +264,107 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Email Management ---
+    const emailSenderInput = document.getElementById('email-sender-name');
+    const emailSubjectInput = document.getElementById('email-subject');
+    const emailTemplateInput = document.getElementById('email-template');
+    const saveEmailConfigBtn = document.getElementById('save-email-config-btn');
+    const emailLogsTableBody = document.querySelector('#email-logs-table tbody');
+
+    const loadEmailConfig = async () => {
+        try {
+            const response = await fetch('/admin/email-config');
+            const config = await response.json();
+            emailSenderInput.value = config.senderName;
+            emailSubjectInput.value = config.subject;
+            emailTemplateInput.value = config.htmlTemplate;
+        } catch (error) {
+            console.error("Error loading email config:", error);
+        }
+    };
+
+    saveEmailConfigBtn.addEventListener('click', async () => {
+        const config = {
+            senderName: emailSenderInput.value,
+            subject: emailSubjectInput.value,
+            htmlTemplate: emailTemplateInput.value
+        };
+
+        try {
+            const response = await fetch('/admin/email-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+            if (response.ok) {
+                Swal.fire('Success!', 'Email configuration saved.', 'success');
+            } else {
+                Swal.fire('Error!', 'Could not save configuration.', 'error');
+            }
+        } catch (error) {
+            console.error("Error saving email config:", error);
+        }
+    });
+
+    const loadEmailLogs = async () => {
+        try {
+            const response = await fetch('/admin/emails');
+            const logs = await response.json();
+            emailLogsTableBody.innerHTML = '';
+
+            logs.forEach(log => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${new Date(log.date).toLocaleString()}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${log.email}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${log.status}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+                        <button class="btn-resend" data-email="${log.email}" data-photo="${log.photoUrl}" style="padding: 5px 10px; cursor: pointer;">Resend</button>
+                    </td>
+                `;
+                emailLogsTableBody.appendChild(row);
+            });
+
+            // Add event listeners to resend buttons
+            document.querySelectorAll('.btn-resend').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const email = e.target.dataset.email;
+                    const photoUrl = e.target.dataset.photo;
+
+                    Swal.fire({
+                        title: 'Resending...',
+                        didOpen: () => Swal.showLoading()
+                    });
+
+                    try {
+                        const response = await fetch('/admin/resend-email', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, photoUrl })
+                        });
+                        if (response.ok) {
+                            Swal.fire('Success!', 'Email resent successfully.', 'success');
+                            loadEmailLogs(); // Refresh logs
+                        } else {
+                            Swal.fire('Error!', 'Failed to resend email.', 'error');
+                        }
+                    } catch (error) {
+                        console.error("Error resending email:", error);
+                        Swal.fire('Error!', 'An error occurred.', 'error');
+                    }
+                });
+            });
+
+        } catch (error) {
+            console.error("Error loading email logs:", error);
+        }
+    };
+
     // Initial setup
     loadTheme();
     checkPassword();
     loadFrames();
     loadSettings();
+    loadEmailConfig();
+    loadEmailLogs();
 });

@@ -284,31 +284,8 @@ app.post('/capture', upload.single('photo'), async (req, res) => {
     }
 });
 
-app.post('/send-email', async (req, res) => {
-    const { email, photoUrl } = req.body;
-
-    // Create a transporter object using the provided SMTP connection string for Gmail API
-    // IMPORTANT: Storing credentials directly in the code is not recommended for production.
-    // Consider using environment variables (e.g., with dotenv) for better security.
-    let transporter = nodemailer.createTransport(`smtps://${encodeURIComponent(process.env.EMAIL_USER)}:${process.env.EMAIL_PASS}@smtp.gmail.com:465`);
-
-    // send mail with defined transport object
-    let info = await transporter.sendMail({
-        from: `"Photo Kiosk" <${process.env.EMAIL_USER}>`, // Update the from address
-        to: email,
-        subject: "Your Themed Photo!",
-        html: `<p>Here is your photo!</p><img src="${photoUrl}" alt="photo"/>`,
-        attachments: [
-            {
-                filename: 'photo.png',
-                path: photoUrl
-            }
-        ]
-    });
-
-    console.log("Message sent: %s", info.messageId);
-    res.json({ success: true });
-});
+// Old send-email endpoint removed/replaced by the new one above
+// app.post('/send-email', ... );
 
 app.get('/qr-code', async (req, res) => {
     const { photoUrl } = req.query;
@@ -346,6 +323,141 @@ app.post('/admin/settings', (req, res) => {
     };
     writeSettings(settings);
     res.json({ success: true, settings });
+});
+
+// --- Email Management ---
+const EMAILS_DB_PATH = path.join(__dirname, 'emails.json');
+const EMAIL_CONFIG_PATH = path.join(__dirname, 'emailConfig.json');
+
+const readEmails = () => {
+    if (!fs.existsSync(EMAILS_DB_PATH)) return [];
+    try {
+        return JSON.parse(fs.readFileSync(EMAILS_DB_PATH, 'utf-8'));
+    } catch (e) { return []; }
+};
+
+const saveEmailLog = (log) => {
+    const logs = readEmails();
+    logs.unshift(log); // Add to beginning
+    fs.writeFileSync(EMAILS_DB_PATH, JSON.stringify(logs, null, 2));
+};
+
+const readEmailConfig = () => {
+    if (!fs.existsSync(EMAIL_CONFIG_PATH)) {
+        return {
+            senderName: "Photo Kiosk",
+            subject: "Your Themed Photo!",
+            htmlTemplate: "<p>Here is your photo!</p><img src='{{photoUrl}}' alt='photo'/>"
+        };
+    }
+    try {
+        return JSON.parse(fs.readFileSync(EMAIL_CONFIG_PATH, 'utf-8'));
+    } catch (e) {
+        return {
+            senderName: "Photo Kiosk",
+            subject: "Your Themed Photo!",
+            htmlTemplate: "<p>Here is your photo!</p><img src='{{photoUrl}}' alt='photo'/>"
+        };
+    }
+};
+
+const saveEmailConfig = (config) => {
+    fs.writeFileSync(EMAIL_CONFIG_PATH, JSON.stringify(config, null, 2));
+};
+
+app.post('/send-email', async (req, res) => {
+    const { email, photoUrl } = req.body;
+    const config = readEmailConfig();
+
+    try {
+        let transporter = nodemailer.createTransport(`smtps://${encodeURIComponent(process.env.EMAIL_USER)}:${process.env.EMAIL_PASS}@smtp.gmail.com:465`);
+
+        const htmlContent = config.htmlTemplate.replace('{{photoUrl}}', photoUrl);
+
+        let info = await transporter.sendMail({
+            from: `"${config.senderName}" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: config.subject,
+            html: htmlContent,
+            attachments: [
+                {
+                    filename: 'photo.png',
+                    path: photoUrl
+                }
+            ]
+        });
+
+        console.log("Message sent: %s", info.messageId);
+
+        // Save log
+        saveEmailLog({
+            id: Date.now(),
+            date: new Date().toISOString(),
+            email,
+            photoUrl,
+            status: 'sent',
+            messageId: info.messageId
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Error sending email:", error);
+        saveEmailLog({
+            id: Date.now(),
+            date: new Date().toISOString(),
+            email,
+            photoUrl,
+            status: 'failed',
+            error: error.message
+        });
+        res.status(500).json({ success: false, message: 'Failed to send email' });
+    }
+});
+
+app.get('/admin/emails', (req, res) => {
+    res.json(readEmails());
+});
+
+app.get('/admin/email-config', (req, res) => {
+    res.json(readEmailConfig());
+});
+
+app.post('/admin/email-config', (req, res) => {
+    saveEmailConfig(req.body);
+    res.json({ success: true });
+});
+
+app.post('/admin/resend-email', async (req, res) => {
+    const { email, photoUrl } = req.body;
+    // Reuse the logic by calling the internal function or just redirecting the request locally?
+    // For simplicity, I'll copy the logic or call the handler if refactored.
+    // Let's just do a fetch to our own endpoint or duplicate logic. Duplicating logic is safer here to avoid recursion issues.
+
+    const config = readEmailConfig();
+    try {
+        let transporter = nodemailer.createTransport(`smtps://${encodeURIComponent(process.env.EMAIL_USER)}:${process.env.EMAIL_PASS}@smtp.gmail.com:465`);
+        const htmlContent = config.htmlTemplate.replace('{{photoUrl}}', photoUrl);
+
+        await transporter.sendMail({
+            from: `"${config.senderName}" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: config.subject,
+            html: htmlContent,
+            attachments: [{ filename: 'photo.png', path: photoUrl }]
+        });
+
+        saveEmailLog({
+            id: Date.now(),
+            date: new Date().toISOString(),
+            email,
+            photoUrl,
+            status: 'resent',
+        });
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Error resending email:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
 });
 
 

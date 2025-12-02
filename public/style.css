@@ -57,7 +57,7 @@ body {
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 /* 
@@ -170,15 +170,82 @@ body {
     pointer-events: none;
 }
 
-.qr-option {
+/* 
+   ================
+   6. Output Options (Redesigned)
+   ================
+*/
+.output-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    text-align: left;
+}
+
+.photo-preview img {
     width: 100%;
-    max-width: 400px;
+    max-width: 350px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 4px solid #fff;
+}
+
+.actions-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.qr-section,
+.email-section {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+}
+
+.qr-section h3,
+.email-section h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
 }
 
 #qr-code-container {
-    margin-top: 1rem;
-    min-height: 128px;
-    /* Reserve space for QR code */
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}
+
+#qr-code-container img {
+    max-width: 150px;
+    border: 4px solid white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.small-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    text-align: center;
+    margin: 0;
+}
+
+.email-input-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.email-input-group input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.email-input-group button {
+    margin-top: 0;
+    white-space: nowrap;
 }
 
 /* 
@@ -188,14 +255,14 @@ body {
 */
 input[type="email"],
 input[type="text"] {
-    width: calc(100% - 24px);
-    /* Adjusted for padding */
+    width: 100%;
     padding: 12px;
     border-radius: 8px;
     border: 1px solid var(--border-light);
     margin-bottom: 10px;
     font-size: 1rem;
     transition: border-color 0.3s, box-shadow 0.3s;
+    box-sizing: border-box;
 }
 
 input[type="email"]:focus,
@@ -299,6 +366,15 @@ input[type="text"]:focus {
 @media (max-width: 768px) {
     .container {
         padding: 1.5rem;
+    }
+
+    .output-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .photo-preview img {
+        max-width: 250px;
     }
 
     .header h1 {
@@ -429,4 +505,70 @@ input[type="text"]:focus {
 .thumbnail:hover {
     transform: scale(1.05);
     border-color: var(--secondary-color);
+}
+
+/* 
+   ================
+   11. Sending Animation
+   ================
+*/
+#sending-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.sending-content {
+    text-align: center;
+}
+
+.paper-plane {
+    font-size: 4rem;
+    display: inline-block;
+    animation: fly 2s infinite ease-in-out;
+}
+
+.progress-bar {
+    width: 300px;
+    height: 10px;
+    background: #e9ecef;
+    border-radius: 5px;
+    margin: 1rem auto;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--primary-color);
+    width: 0%;
+    transition: width 0.1s linear;
+}
+
+@keyframes fly {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    25% {
+        transform: translate(10px, -10px) rotate(5deg);
+    }
+
+    50% {
+        transform: translate(0, -5px) rotate(0deg);
+    }
+
+    75% {
+        transform: translate(-10px, -10px) rotate(-5deg);
+    }
+
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
 }

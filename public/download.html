@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Descarga tu Foto</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .download-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .download-photo {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            border: 5px solid white;
+        }
+
+        .btn-download {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .btn-download:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="download-container">
+        <div class="header">
+            <h1>¡Aquí tienes tu recuerdo!</h1>
+            <p>Mantén presionada la imagen para guardarla o usa el botón.</p>
+        </div>
+
+        <img id="photo-display" class="download-photo" src="" alt="Tu foto">
+
+        <a id="download-link" href="#" class="btn-download" download="recuerdo-kiosco.png">Descargar Foto</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const photoUrl = params.get('photo');
+
+            if (photoUrl) {
+                const img = document.getElementById('photo-display');
+                const link = document.getElementById('download-link');
+
+                img.src = photoUrl;
+                link.href = photoUrl;
+            } else {
+                document.body.innerHTML = '<h1>Error: No se encontró la foto.</h1>';
+            }
+        });
+    </script>
+</body>
+
+</html>
