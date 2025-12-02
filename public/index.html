@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="vendor/sweetalert2.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -23,60 +25,62 @@
         </div>
 
         <style>
-        .carousel-container {
-            position: relative;
-            width: 100%;
-            overflow: hidden;
-        }
-        .carousel {
-            display: flex;
-            transition: transform 0.5s ease;
-        }
-        .carousel img {
-            width: 100%;
-            height: auto;
-        }
+            .carousel-container {
+                position: relative;
+                width: 100%;
+                overflow: hidden;
+            }
+
+            .carousel {
+                display: flex;
+                transition: transform 0.5s ease;
+            }
+
+            .carousel img {
+                width: 100%;
+                height: auto;
+            }
         </style>
 
         <script>
-        const images = [];
-        const carousel = document.querySelector('.carousel'); // Definir el carrusel
+            const images = [];
+            const carousel = document.querySelector('.carousel'); // Definir el carrusel
 
-        // Cargar imágenes de la carpeta 'photos'
-fetch('photos/')
-    .then(response => response.text())
-    .then(data => {
-        const parser = new DOMParser();
-        const htmlDocument = parser.parseFromString(data, 'text/html');
-        const imgElements = htmlDocument.querySelectorAll('a');
-        imgElements.forEach(link => {
-            const imgSrc = link.getAttribute('href');
-            if (imgSrc.endsWith('.jpg') || imgSrc.endsWith('.png')) {
-                images.push('photos/' + imgSrc);
+            // Cargar imágenes de la carpeta 'photos'
+            fetch('photos/')
+                .then(response => response.text())
+                .then(data => {
+                    const parser = new DOMParser();
+                    const htmlDocument = parser.parseFromString(data, 'text/html');
+                    const imgElements = htmlDocument.querySelectorAll('a');
+                    imgElements.forEach(link => {
+                        const imgSrc = link.getAttribute('href');
+                        if (imgSrc.endsWith('.jpg') || imgSrc.endsWith('.png')) {
+                            images.push('photos/' + imgSrc);
+                        }
+                    });
+                    loadImages();
+                });
+
+            function loadImages() {
+                images.forEach(image => {
+                    const imgElement = document.createElement('img');
+                    imgElement.src = image;
+                    imgElement.style.opacity = 0; // Inicialmente oculto
+                    carousel.appendChild(imgElement);
+                    // Efecto de desvanecimiento
+                    setTimeout(() => {
+                        imgElement.style.transition = 'opacity 1s';
+                        imgElement.style.opacity = 1;
+                    }, 1000 * images.indexOf(image)); // Desvanecer lentamente
+                });
             }
-        });
-        loadImages();
-    });
 
-        function loadImages() {
-            images.forEach(image => {
-                const imgElement = document.createElement('img');
-                imgElement.src = image;
-                imgElement.style.opacity = 0; // Inicialmente oculto
-                carousel.appendChild(imgElement);
-                // Efecto de desvanecimiento
-                setTimeout(() => {
-                    imgElement.style.transition = 'opacity 1s';
-                    imgElement.style.opacity = 1;
-                }, 1000 * images.indexOf(image)); // Desvanecer lentamente
-            });
-        }
-
-        let currentIndex = 0;
-        setInterval(() => {
-            currentIndex = (currentIndex + 1) % images.length;
-            carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
-        }, 3000);
+            let currentIndex = 0;
+            setInterval(() => {
+                currentIndex = (currentIndex + 1) % images.length;
+                carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
+            }, 3000);
         </script>
 
         <!-- 1. Menú Principal -->
@@ -94,9 +98,18 @@ fetch('photos/')
             <div class="camera-wrapper">
                 <video id="video" autoplay></video>
                 <div id="frame-overlay"></div>
+                <div id="countdown-overlay" class="hidden">3</div>
+                <div id="flash-overlay"></div>
             </div>
             <button id="capture-photo" class="btn-capture">Capturar</button>
             <canvas id="canvas" class="hidden"></canvas>
+        </div>
+
+        <!-- 2.5 Selección de Foto -->
+        <div id="photo-selection" class="hidden">
+            <h2>Elige tu mejor foto</h2>
+            <p>Selecciona la foto que más te guste.</p>
+            <div id="thumbnails-container"></div>
         </div>
 
         <!-- 3. Opciones de Salida -->
@@ -121,4 +134,5 @@ fetch('photos/')
     <script src="vendor/sweetalert2.min.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>

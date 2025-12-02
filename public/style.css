@@ -11,9 +11,12 @@
    ================
 */
 :root {
-    --primary-color: #004C97; /* UCR Dark Blue */
-    --secondary-color: #0071BC; /* UCR Light Blue */
-    --accent-color: #009688; /* Teal for capture button */
+    --primary-color: #004C97;
+    /* UCR Dark Blue */
+    --secondary-color: #0071BC;
+    /* UCR Light Blue */
+    --accent-color: #009688;
+    /* Teal for capture button */
     --accent-hover-color: #00796B;
     --background-gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
     --container-bg: #ffffff;
@@ -29,7 +32,7 @@
    2. General Styles
    ================
 */
-body { 
+body {
     font-family: var(--font-family);
     display: flex;
     justify-content: center;
@@ -83,12 +86,16 @@ body {
    4. Main Menu & Frame Selection
    ================
 */
-#main-menu h2, #camera-view h2, #output-options h2 {
+#main-menu h2,
+#camera-view h2,
+#output-options h2 {
     color: var(--primary-color);
     margin-bottom: 0.5rem;
 }
 
-#main-menu p, #camera-view p, #output-options p {
+#main-menu p,
+#camera-view p,
+#output-options p {
     color: var(--text-medium);
     margin-bottom: 1.5rem;
     max-width: 600px;
@@ -117,12 +124,12 @@ body {
     border-radius: 10px;
     transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
     background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 #frames-container-main img:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 #frames-container-main img.selected {
@@ -160,44 +167,18 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
     pointer-events: none;
 }
 
-/* 
-   ================
-   6. Output & Options
-   ================
-*/
-#final-photo {
-    width: 100%;
-    max-width: 480px;
-    aspect-ratio: 4 / 5;
-    object-fit: contain;
-    border-radius: 10px;
-    margin-bottom: 1.5rem;
-    border: 3px solid var(--secondary-color);
-    background-color: #000;
-}
-
-.options {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
-
-.email-option, .qr-option {
+.qr-option {
     width: 100%;
     max-width: 400px;
 }
 
 #qr-code-container {
     margin-top: 1rem;
-    min-height: 128px; /* Reserve space for QR code */
+    min-height: 128px;
+    /* Reserve space for QR code */
 }
 
 /* 
@@ -205,8 +186,10 @@ body {
    7. Forms & Buttons
    ================
 */
-input[type="email"], input[type="text"] {
-    width: calc(100% - 24px); /* Adjusted for padding */
+input[type="email"],
+input[type="text"] {
+    width: calc(100% - 24px);
+    /* Adjusted for padding */
     padding: 12px;
     border-radius: 8px;
     border: 1px solid var(--border-light);
@@ -215,13 +198,16 @@ input[type="email"], input[type="text"] {
     transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-input[type="email"]:focus, input[type="text"]:focus {
+input[type="email"]:focus,
+input[type="text"]:focus {
     outline: none;
     border-color: var(--secondary-color);
     box-shadow: 0 0 5px rgba(0, 113, 188, 0.5);
 }
 
-.btn-main, .btn-secondary, .btn-capture {
+.btn-main,
+.btn-secondary,
+.btn-capture {
     padding: 12px 24px;
     border: none;
     border-radius: 8px;
@@ -231,7 +217,7 @@ input[type="email"]:focus, input[type="text"]:focus {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s, opacity 0.3s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     margin-top: 0.5rem;
 }
 
@@ -242,14 +228,16 @@ input[type="email"]:focus, input[type="text"]:focus {
     box-shadow: none;
 }
 
-.btn-main:hover, .btn-secondary:hover, .btn-capture:hover {
+.btn-main:hover,
+.btn-secondary:hover,
+.btn-capture:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .btn-main:disabled:hover {
     transform: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-main {
@@ -267,7 +255,8 @@ input[type="email"]:focus, input[type="text"]:focus {
 }
 
 .btn-secondary:hover {
-    background-color: #003366; /* A darker shade */
+    background-color: #003366;
+    /* A darker shade */
 }
 
 .btn-capture {
@@ -340,7 +329,9 @@ input[type="email"]:focus, input[type="text"]:focus {
         margin-bottom: 1.5rem;
     }
 
-    .btn-main, .btn-secondary, .btn-capture {
+    .btn-main,
+    .btn-secondary,
+    .btn-capture {
         padding: 10px 20px;
         font-size: 0.9rem;
     }
@@ -367,4 +358,75 @@ input[type="email"]:focus, input[type="text"]:focus {
 
 .gallery-link:hover {
     text-decoration: underline;
+}
+
+/* 
+   ================
+   10. Multi-Capture & Selection
+   ================
+*/
+#countdown-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 10rem;
+    color: white;
+    font-weight: bold;
+    text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    pointer-events: none;
+}
+
+#flash-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 20;
+}
+
+.flash-active {
+    animation: flash-animation 0.2s ease-out;
+}
+
+@keyframes flash-animation {
+    0% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+#photo-selection {
+    text-align: center;
+}
+
+#thumbnails-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+}
+
+.thumbnail {
+    width: 150px;
+    height: auto;
+    border: 3px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.thumbnail:hover {
+    transform: scale(1.05);
+    border-color: var(--secondary-color);
 }

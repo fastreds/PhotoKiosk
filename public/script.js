@@ -7,6 +7,7 @@
 // --- 1. DOM Element Selection ---
 const mainMenu = document.getElementById('main-menu');
 const cameraView = document.getElementById('camera-view');
+const photoSelection = document.getElementById('photo-selection'); // New view
 const outputOptions = document.getElementById('output-options');
 
 const startCameraButton = document.getElementById('start-camera');
@@ -22,10 +23,16 @@ const finalPhoto = document.getElementById('final-photo');
 const emailInput = document.getElementById('email');
 const qrCodeContainer = document.getElementById('qr-code-container');
 const frameOverlay = document.getElementById('frame-overlay');
+const countdownOverlay = document.getElementById('countdown-overlay'); // New element
+const flashOverlay = document.getElementById('flash-overlay'); // New element
+const thumbnailsContainer = document.getElementById('thumbnails-container'); // New element
 
 // --- 2. State Variables ---
 let capturedPhotoDataUrl = null;
 let selectedFrame = null;
+let selectedFrameAspectRatio = 4 / 5; // Default aspect ratio
+let capturedPhotos = []; // Array to store multiple shots
+let settings = { countdownDuration: 3, photoInterval: 2 }; // Default settings
 
 // --- 3. Core Functions ---
 
@@ -58,6 +65,10 @@ async function startCamera() {
     // Apply the selected frame to the overlay
     if (selectedFrame) {
         frameOverlay.style.backgroundImage = `url('/frames/${selectedFrame}')`;
+
+        // Update camera wrapper aspect ratio
+        const cameraWrapper = document.querySelector('.camera-wrapper');
+        cameraWrapper.style.aspectRatio = `${selectedFrameAspectRatio}`;
     }
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -76,10 +87,52 @@ async function startCamera() {
 /**
  * Captures a photo from the video stream, crops it, and sends it to the server.
  */
+/**
+ * Captures a sequence of photos with a countdown.
+ */
 async function captureAndProcessPhoto() {
+    // Disable button to prevent multiple clicks
+    capturePhotoButton.disabled = true;
+
+    // 1. Countdown
+    countdownOverlay.classList.remove('hidden');
+    for (let i = settings.countdownDuration; i > 0; i--) {
+        countdownOverlay.textContent = i;
+        await new Promise(r => setTimeout(r, 1000));
+    }
+    countdownOverlay.classList.add('hidden');
+
+    // 2. Multi-Capture Loop
+    capturedPhotos = [];
+    for (let i = 0; i < 3; i++) {
+        // Flash effect
+        flashOverlay.classList.add('flash-active');
+        setTimeout(() => flashOverlay.classList.remove('flash-active'), 200);
+
+        // Capture frame
+        const photoDataUrl = captureFrameToDataUrl();
+        capturedPhotos.push(photoDataUrl);
+
+        // Wait interval (except after last photo)
+        if (i < 2) {
+            countdownOverlay.classList.remove('hidden');
+            // Mini countdown for the interval
+            for (let j = settings.photoInterval; j > 0; j--) {
+                countdownOverlay.textContent = j;
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            countdownOverlay.classList.add('hidden');
+        }
+    }
+
+    // 3. Show Selection UI
+    showPhotoSelection();
+}
+
+function captureFrameToDataUrl() {
     // --- Aspect Ratio Cropping Logic ---
     const videoAspectRatio = video.videoWidth / video.videoHeight;
-    const canvasAspectRatio = 4 / 5; // Instagram Portrait
+    const canvasAspectRatio = selectedFrameAspectRatio;
     let sWidth, sHeight, sx, sy;
 
     if (videoAspectRatio > canvasAspectRatio) {
@@ -96,17 +149,30 @@ async function captureAndProcessPhoto() {
 
     // --- Canvas Drawing ---
     canvas.width = 1080;
-    canvas.height = 1350;
+    canvas.height = 1080 / canvasAspectRatio;
+
     const context = canvas.getContext('2d');
     context.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
-    capturedPhotoDataUrl = canvas.toDataURL('image/png');
+    return canvas.toDataURL('image/png');
+}
 
-    // --- Stop Camera ---
-    if (video.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-    }
+function showPhotoSelection() {
+    cameraView.classList.add('hidden');
+    photoSelection.classList.remove('hidden');
+    thumbnailsContainer.innerHTML = '';
 
-    // --- Send to Server ---
+    capturedPhotos.forEach((photo, index) => {
+        const img = document.createElement('img');
+        img.src = photo;
+        img.classList.add('thumbnail');
+        img.onclick = () => selectFinalPhoto(photo);
+        thumbnailsContainer.appendChild(img);
+    });
+}
+
+async function selectFinalPhoto(photoDataUrl) {
+    capturedPhotoDataUrl = photoDataUrl;
+    photoSelection.classList.add('hidden');
     await sendPhotoToServer();
 }
 
@@ -129,7 +195,7 @@ async function sendPhotoToServer() {
 
         const response = await fetch('/capture', { method: 'POST', body: formData });
         if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
-        
+
         const result = await response.json();
         Swal.close();
 
@@ -175,6 +241,22 @@ function selectFrame(imgElement, frameName) {
     document.querySelectorAll('#frames-container-main img').forEach(i => i.classList.remove('selected'));
     imgElement.classList.add('selected');
     selectedFrame = frameName;
+
+    const updateAspectRatio = () => {
+        if (imgElement.naturalWidth && imgElement.naturalHeight) {
+            selectedFrameAspectRatio = imgElement.naturalWidth / imgElement.naturalHeight;
+        } else {
+            selectedFrameAspectRatio = 4 / 5; // Fallback
+        }
+        console.log(`Frame selected: ${frameName}, Aspect Ratio: ${selectedFrameAspectRatio}`);
+    };
+
+    if (imgElement.complete) {
+        updateAspectRatio();
+    } else {
+        imgElement.onload = updateAspectRatio;
+    }
+
     startCameraButton.disabled = false; // Enable the camera button
 }
 
@@ -228,15 +310,18 @@ function resetToMainMenu() {
     // Hide other views
     cameraView.classList.add('hidden');
     outputOptions.classList.add('hidden');
-    
+    photoSelection.classList.add('hidden');
+
     // Show main menu
     mainMenu.classList.remove('hidden');
 
     // Reset state
     selectedFrame = null;
     capturedPhotoDataUrl = null;
+    capturedPhotos = [];
     startCameraButton.disabled = true;
-    
+    capturePhotoButton.disabled = false;
+
     // Clear dynamic content
     document.querySelectorAll('#frames-container-main img').forEach(i => i.classList.remove('selected'));
     qrCodeContainer.innerHTML = '';
@@ -258,6 +343,14 @@ getQrButton.addEventListener('click', generateQrCode);
 retakePhotoButton.addEventListener('click', resetToMainMenu);
 
 // --- 5. Initial Load ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     loadFramesForSelection();
+    // Load settings
+    try {
+        const response = await fetch('/settings');
+        const data = await response.json();
+        settings = data;
+    } catch (e) {
+        console.error("Failed to load settings", e);
+    }
 });

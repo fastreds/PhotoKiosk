@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const path = require('path');
@@ -7,8 +8,8 @@ const nodemailer = require('nodemailer');
 const qrcode = require('qrcode');
 const multer = require('multer');
 const { removeBackground } = require('@imgly/background-removal-node');
+
 const Jimp = require('jimp');
-const config = require('./config');
 
 const FRAME_DIR = path.join(__dirname, 'public/frames');
 const PHOTOS_DIR = path.join(__dirname, 'public/photos'); // Directorio de fotos
@@ -46,7 +47,7 @@ const syncFrames = () => {
     }
     const files = fs.readdirSync(FRAME_DIR);
     let framesData = readFramesData();
-    
+
     const existingFiles = framesData.map(f => f.name);
 
     // Add new files to frames.json
@@ -181,7 +182,7 @@ app.post('/admin/clean-grid', async (req, res) => {
         image.scan(0, 0, image.bitmap.width, image.bitmap.height, function (x, y, idx) {
             const currentColor = this.getPixelColor(x, y);
             // Comparamos los colores ignorando el canal alfa para mayor flexibilidad
-            if ((currentColor & 0xFFFFFF00) === (checkerboardColor1 & 0xFFFFFF00) || 
+            if ((currentColor & 0xFFFFFF00) === (checkerboardColor1 & 0xFFFFFF00) ||
                 (currentColor & 0xFFFFFF00) === (checkerboardColor2 & 0xFFFFFF00)) {
                 this.setPixelColor(0x00000000, x, y); // Poner en transparente
             }
@@ -229,7 +230,7 @@ app.post('/capture', upload.single('photo'), async (req, res) => {
 
     try {
         const { frame } = req.body;
-        
+
         // --- Graceful Error Handling ---
         if (!frame) {
             console.error('Error: Frame name is missing in the request body.');
@@ -254,30 +255,20 @@ app.post('/capture', upload.single('photo'), async (req, res) => {
         const photoBuffer = fs.readFileSync(photoPath);
         const frameBuffer = fs.readFileSync(framePath);
 
-        const outputWidth = 1080;
-        const outputHeight = 1350;
+        // Get frame metadata to determine output size
+        const frameMetadata = await sharp(frameBuffer).metadata();
+        const outputWidth = frameMetadata.width;
+        const outputHeight = frameMetadata.height;
 
-        // 1. Create the blurred background
-        const background = await sharp(photoBuffer)
-            .resize(outputWidth, outputHeight, { fit: 'cover' })
-            .blur(50) // Heavy blur
-            .toBuffer();
-
-        // 2. Resize the main photo to fit within the output dimensions
+        // 1. Resize the main photo to COVER the frame dimensions
         const mainPhoto = await sharp(photoBuffer)
-            .resize(outputWidth, outputHeight, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-            .toBuffer();
-        
-        // 3. Resize the frame to fit within the output dimensions
-        const resizedFrame = await sharp(frameBuffer)
-            .resize(outputWidth, outputHeight, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+            .resize(outputWidth, outputHeight, { fit: 'cover' })
             .toBuffer();
 
-        // 4. Composite everything: background, then main photo, then frame
-        await sharp(background)
+        // 2. Composite: Main photo first, then frame on top
+        await sharp(mainPhoto)
             .composite([
-                { input: mainPhoto, gravity: 'center' },
-                { input: resizedFrame, gravity: 'center' }
+                { input: frameBuffer, gravity: 'center' }
             ])
             .toFile(outputPath);
 
@@ -299,11 +290,11 @@ app.post('/send-email', async (req, res) => {
     // Create a transporter object using the provided SMTP connection string for Gmail API
     // IMPORTANT: Storing credentials directly in the code is not recommended for production.
     // Consider using environment variables (e.g., with dotenv) for better security.
-    let transporter = nodemailer.createTransport("smtps://fastreds%40gmail.com:zjahytqliioomcqp@smtp.gmail.com:465");
+    let transporter = nodemailer.createTransport(`smtps://${encodeURIComponent(process.env.EMAIL_USER)}:${process.env.EMAIL_PASS}@smtp.gmail.com:465`);
 
     // send mail with defined transport object
     let info = await transporter.sendMail({
-        from: '"Photo Kiosk" <fastreds@gmail.com>', // Update the from address
+        from: `"Photo Kiosk" <${process.env.EMAIL_USER}>`, // Update the from address
         to: email,
         subject: "Your Themed Photo!",
         html: `<p>Here is your photo!</p><img src="${photoUrl}" alt="photo"/>`,
@@ -323,6 +314,38 @@ app.get('/qr-code', async (req, res) => {
     const { photoUrl } = req.query;
     const qrCode = await qrcode.toDataURL(photoUrl);
     res.send(`<img src="${qrCode}"/>`);
+});
+
+// --- Settings Management ---
+const SETTINGS_PATH = path.join(__dirname, 'settings.json');
+
+const readSettings = () => {
+    if (!fs.existsSync(SETTINGS_PATH)) {
+        return { countdownDuration: 3, photoInterval: 2 }; // Defaults
+    }
+    try {
+        return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'));
+    } catch (e) {
+        return { countdownDuration: 3, photoInterval: 2 };
+    }
+};
+
+const writeSettings = (settings) => {
+    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2));
+};
+
+app.get('/settings', (req, res) => {
+    res.json(readSettings());
+});
+
+app.post('/admin/settings', (req, res) => {
+    const { countdownDuration, photoInterval } = req.body;
+    const settings = {
+        countdownDuration: parseInt(countdownDuration) || 3,
+        photoInterval: parseInt(photoInterval) || 2
+    };
+    writeSettings(settings);
+    res.json({ success: true, settings });
 });
 
 

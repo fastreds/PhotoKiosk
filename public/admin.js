@@ -224,8 +224,49 @@ document.addEventListener('DOMContentLoaded', () => {
         applyTheme(newTheme);
     });
 
+    // --- Settings Management ---
+    const countdownInput = document.getElementById('countdown-duration');
+    const intervalInput = document.getElementById('photo-interval');
+    const saveSettingsBtn = document.getElementById('save-settings-btn');
+
+    const loadSettings = async () => {
+        try {
+            const response = await fetch('/settings');
+            const settings = await response.json();
+            countdownInput.value = settings.countdownDuration;
+            intervalInput.value = settings.photoInterval;
+        } catch (error) {
+            console.error("Error loading settings:", error);
+        }
+    };
+
+    saveSettingsBtn.addEventListener('click', async () => {
+        const settings = {
+            countdownDuration: countdownInput.value,
+            photoInterval: intervalInput.value
+        };
+
+        try {
+            const response = await fetch('/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            });
+            const result = await response.json();
+            if (result.success) {
+                Swal.fire('Success!', 'Settings saved successfully.', 'success');
+            } else {
+                Swal.fire('Error!', 'Could not save settings.', 'error');
+            }
+        } catch (error) {
+            console.error("Error saving settings:", error);
+            Swal.fire('Error!', 'An error occurred.', 'error');
+        }
+    });
+
     // Initial setup
     loadTheme();
     checkPassword();
     loadFrames();
+    loadSettings();
 });
