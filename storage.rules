@@ -1,0 +1,19 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Reglas para la ruta public/photos/
+    match /public/photos/{fileName} {
+      allow read, write: if true;
+    }
+
+    // Reglas para la ruta public/uploads/
+    match /public/uploads/{fileName} {
+      allow read, write: if true;
+    }
+    
+    // Reglas para frames (necesario para que se vean los marcos)
+    match /public/frames/{fileName} {
+      allow read, write: if true;
+    }
+  }
+}

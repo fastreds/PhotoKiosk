@@ -211,3 +211,79 @@ input:checked + .slider:before {
     color: var(--swal-input-color) !important;
     border-color: var(--swal-input-border-color) !important;
 }
+
+/* Login Form Styles */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+}
+
+.login-card {
+    background-color: var(--section-bg-color);
+    border: 1px solid var(--section-border-color);
+    border-radius: 10px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.login-card h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--section-border-color);
+    border-radius: 5px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--link-color);
+}
+
+.btn-main {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--link-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-main:hover {
+    opacity: 0.9;
+}
+
+.error-message {
+    color: var(--btn-delete-color);
+    text-align: center;
+    margin-top: 1rem;
+    min-height: 1.2em;
+}
+
+.hidden {
+    display: none !important;
+}
