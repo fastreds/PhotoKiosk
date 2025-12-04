@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const item = document.createElement('div');
                 item.className = 'frame-item';
                 item.innerHTML = `
-                    <img src="${frame.url}" alt="${frame.name}" crossorigin="anonymous">
+                    <img src="${frame.url}" alt="${frame.name}" crossorigin="anonymous" onerror="this.onerror=null; this.src='frames/${frame.name}';">
                     <p>${frame.name}</p>
                     <div class="frame-actions">
                         <label class="toggle-switch">
@@ -202,6 +202,59 @@ document.addEventListener('DOMContentLoaded', () => {
             Swal.fire('Error', e.message, 'error');
         }
         frameUploadInput.value = '';
+
+    });
+
+    // --- Repair Frames ---
+    const repairFramesBtn = document.getElementById('repair-frames-btn');
+    repairFramesBtn.addEventListener('click', async () => {
+        Swal.fire({
+            title: 'Repairing Frames...',
+            text: 'This will re-upload all frames from the local "frames" folder to Firebase Storage and update the database. This fixes broken URLs.',
+            showCancelButton: true,
+            confirmButtonText: 'Start Repair',
+            showLoaderOnConfirm: true,
+            preConfirm: async () => {
+                try {
+                    // 1. Get all frames from Firestore
+                    const querySnapshot = await getDocs(collection(db, "frames"));
+                    const frames = [];
+                    querySnapshot.forEach(doc => frames.push({ id: doc.id, ...doc.data() }));
+
+                    for (const frame of frames) {
+                        const frameName = frame.name;
+                        const localUrl = `frames/${frameName}`;
+
+                        try {
+                            // 2. Fetch local file
+                            const response = await fetch(localUrl);
+                            if (!response.ok) throw new Error(`Local file not found: ${localUrl}`);
+                            const blob = await response.blob();
+
+                            // 3. Upload to Storage
+                            const storageRef = ref(storage, `public/frames/${frameName}`);
+                            await uploadBytes(storageRef, blob);
+                            const newUrl = await getDownloadURL(storageRef);
+
+                            // 4. Update Firestore
+                            await updateDoc(doc(db, "frames", frame.id), { url: newUrl });
+                            console.log(`Repaired ${frameName}`);
+                        } catch (err) {
+                            console.error(`Failed to repair ${frameName}:`, err);
+                        }
+                    }
+                    return true;
+                } catch (error) {
+                    Swal.showValidationMessage(`Request failed: ${error}`);
+                }
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire('Finished!', 'Frames have been repaired.', 'success');
+                loadFrames();
+            }
+        });
     });
 
     // --- Theme Management ---
@@ -227,6 +280,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Settings Management ---
     const countdownInput = document.getElementById('countdown-duration');
     const intervalInput = document.getElementById('photo-interval');
+    const inactivityInput = document.getElementById('inactivity-timeout');
+    const indexLimitInput = document.getElementById('index-carousel-limit');
     const saveSettingsBtn = document.getElementById('save-settings-btn');
 
     const loadSettings = async () => {
@@ -236,6 +291,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = docSnap.data();
                 countdownInput.value = data.countdownDuration;
                 intervalInput.value = data.photoInterval;
+                inactivityInput.value = data.inactivityTimeout || 60;
+                indexLimitInput.value = data.indexCarouselLimit || 10;
             }
         } catch (e) { console.error(e); }
     };
@@ -244,7 +301,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await setDoc(doc(db, "rules", "settings"), {
                 countdownDuration: parseInt(countdownInput.value),
-                photoInterval: parseInt(intervalInput.value)
+                photoInterval: parseInt(intervalInput.value),
+                inactivityTimeout: parseInt(inactivityInput.value),
+                indexCarouselLimit: parseInt(indexLimitInput.value)
             });
             Swal.fire('Success', 'Settings saved.', 'success');
         } catch (e) {

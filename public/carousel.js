@@ -1,22 +1,59 @@
-document.addEventListener('DOMContentLoaded', () => {
+
+import { db } from './js/firebase-config.js';
+import { collection, getDocs, query, orderBy, limit, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import QRCode from "https://esm.sh/qrcode";
+
+document.addEventListener('DOMContentLoaded', async () => {
     const swiperWrapper = document.querySelector('.swiper-wrapper');
+    let inactivityTimeout = null;
+    let settings = { inactivityTimeout: 60 };
+
+    // Load settings
+    try {
+        const settingsSnap = await getDoc(doc(db, "rules", "settings"));
+        if (settingsSnap.exists()) {
+            settings = { ...settings, ...settingsSnap.data() };
+        }
+    } catch (e) {
+        console.warn("Failed to load settings", e);
+    }
+
+    const startInactivityTimer = () => {
+        if (inactivityTimeout) clearTimeout(inactivityTimeout);
+        const timeoutDuration = (settings.inactivityTimeout || 60) * 1000;
+        inactivityTimeout = setTimeout(() => {
+            window.location.href = '/';
+        }, timeoutDuration);
+    };
+
+    const resetInactivityTimer = () => {
+        startInactivityTimer();
+    };
+
+    // Initial timer start
+    startInactivityTimer();
+
+    // Reset timer on interactions
+    document.addEventListener('click', resetInactivityTimer);
+    document.addEventListener('touchstart', resetInactivityTimer);
+    document.addEventListener('mousemove', resetInactivityTimer);
 
     const loadPhotos = async () => {
         try {
-            const response = await fetch('/photos');
-            if (!response.ok) {
-                throw new Error('Failed to fetch photos');
-            }
-            const photos = await response.json();
+            const q = query(collection(db, "photos"), orderBy("createdAt", "desc"), limit(25));
+            const querySnapshot = await getDocs(q);
 
-            if (photos.length === 0) {
-                swiperWrapper.innerHTML = '<p>No hay fotos disponibles en este momento.</p>';
+            if (querySnapshot.empty) {
+                swiperWrapper.innerHTML = '<p style="color:white; text-align:center; width:100%;">No hay fotos disponibles en este momento.</p>';
                 return;
             }
 
-            let swiper; // Declare swiper instance variable
+            let swiper;
 
-            photos.forEach(photoName => {
+            querySnapshot.forEach((doc) => {
+                const photo = doc.data();
+                const photoUrl = photo.url;
+
                 const slide = document.createElement('div');
                 slide.className = 'swiper-slide';
 
@@ -24,43 +61,67 @@ document.addEventListener('DOMContentLoaded', () => {
                 polaroid.className = 'polaroid';
 
                 const img = document.createElement('img');
-                img.src = `/photos/${photoName}`;
+                img.src = photoUrl;
                 img.alt = 'Foto del carrusel';
+                img.loading = 'lazy';
 
                 polaroid.appendChild(img);
                 slide.appendChild(polaroid);
                 swiperWrapper.appendChild(slide);
 
-                // Add click event listener for zoom effect
-                polaroid.addEventListener('click', () => {
-                    if (swiper && swiper.autoplay.running) {
-                        swiper.autoplay.stop();
-                        polaroid.classList.add('zoomed');
+                // Click event for QR Code Modal
+                polaroid.addEventListener('click', async (e) => {
+                    e.stopPropagation(); // Prevent swiper click issues if any
+                    resetInactivityTimer(); // Reset timer explicitly
 
-                        setTimeout(() => {
-                            polaroid.classList.remove('zoomed');
-                            swiper.autoplay.start();
-                        }, 5000); // 5 seconds
+                    // Generate QR Code
+                    const downloadUrl = `${window.location.origin}/download.html?photo=${encodeURIComponent(photoUrl)}`;
+                    let qrCodeDataUrl = '';
+                    try {
+                        qrCodeDataUrl = await QRCode.toDataURL(downloadUrl);
+                    } catch (err) {
+                        console.error("QR Gen Error", err);
                     }
+
+                    Swal.fire({
+                        title: '¡Tu Recuerdo!',
+                        html: `
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                                <img src="${photoUrl}" style="max-width: 100%; max-height: 300px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                                <div style="text-align: center;">
+                                    <p style="margin-bottom: 5px; font-weight: bold;">Escanea para descargar:</p>
+                                    <img src="${qrCodeDataUrl}" style="width: 150px; height: 150px;">
+                                </div>
+                            </div>
+                        `,
+                        showCloseButton: true,
+                        showConfirmButton: false,
+                        width: 600,
+                        padding: '2em',
+                        background: '#fff',
+                        backdrop: `rgba(0,0,0,0.8)`
+                    }).then(() => {
+                        resetInactivityTimer();
+                    });
                 });
             });
 
-            // Initialize Swiper with Premium Settings
+            // Initialize Swiper
             swiper = new Swiper('.swiper-container', {
                 effect: 'coverflow',
                 grabCursor: true,
                 centeredSlides: true,
                 slidesPerView: 'auto',
-                initialSlide: 1, // Start a bit offset if needed, or 0
+                initialSlide: 0,
                 coverflowEffect: {
-                    rotate: 20, // Reduced rotation for cleaner look
+                    rotate: 20,
                     stretch: 0,
-                    depth: 200, // Increased depth for 3D feel
+                    depth: 200,
                     modifier: 1,
                     slideShadows: true,
                 },
-                loop: true,
-                speed: 800, // Slower transition speed
+                loop: querySnapshot.size > 3, // Only loop if enough slides
+                speed: 800,
                 pagination: {
                     el: '.swiper-pagination',
                     clickable: true,
@@ -70,9 +131,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     prevEl: '.swiper-button-prev',
                 },
                 autoplay: {
-                    delay: 4000, // Slower autoplay
+                    delay: 4000,
                     disableOnInteraction: false,
-                    pauseOnMouseEnter: true, // Pause when hovering
+                    pauseOnMouseEnter: true,
                 },
                 keyboard: {
                     enabled: true,
@@ -85,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Error loading photos:', error);
-            swiperWrapper.innerHTML = '<p>Error al cargar la galería de fotos.</p>';
+            swiperWrapper.innerHTML = '<p style="color:white;">Error al cargar la galería de fotos.</p>';
         }
     };
 

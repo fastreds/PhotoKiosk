@@ -63,21 +63,27 @@
                     <label for="photo-interval">Photo Interval (seconds):</label>
                     <input type="number" id="photo-interval" min="1" max="5">
                 </div>
+                <div class="setting-item">
+                    <label for="inactivity-timeout">Inactivity Timeout (seconds):</label>
+                    <input type="number" id="inactivity-timeout" min="10" max="300" placeholder="60">
+                </div>
+                <div class="setting-item">
+                    <label for="index-carousel-limit">Index Carousel Limit (photos):</label>
+                    <input type="number" id="index-carousel-limit" min="1" max="50" placeholder="10">
+                </div>
                 <button id="save-settings-btn" class="btn-main">Save Settings</button>
             </div>
 
             <!-- Frame Management -->
             <div class="admin-section">
                 <h2>Existing Frames</h2>
-                <div id="frames-list"></div>
-            </div>
-
-            <!-- Upload Frame -->
-            <div class="admin-section">
-                <h2>Upload Custom Frame</h2>
-                <p>Choose a transparent PNG file to use as a frame.</p>
-                <button id="upload-frame-btn" class="btn-secondary">Upload Frame</button>
-                <input type="file" id="frame-upload-input" class="hidden" accept="image/png">
+                <div class="actions-bar">
+                    <button id="upload-frame-btn" class="btn-primary">Upload New Frame</button>
+                    <input type="file" id="frame-upload-input" accept="image/*" hidden>
+                    <button id="repair-frames-btn" class="btn-secondary"
+                        style="background-color: #f0ad4e; color: white;">Repair Frames</button>
+                </div>
+                <div id="frames-list" class="grid-container"></div>
             </div>
 
             <!-- Photo Gallery Maintenance -->
@@ -86,7 +92,6 @@
                 <p>Manage captured photos (Delete to free up space).</p>
                 <div id="photo-gallery-list"
                     style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 15px;">
-                    <!-- Photos will be loaded here -->
                 </div>
             </div>
 

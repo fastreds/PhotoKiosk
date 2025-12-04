@@ -43,14 +43,24 @@
 
         <script type="module">
             import { db } from './js/firebase-config.js';
-            import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+            import { collection, getDocs, query, orderBy, limit, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
             const carousel = document.querySelector('.carousel');
             const images = [];
 
             async function loadImagesFromFirestore() {
                 try {
-                    const q = query(collection(db, "photos"), orderBy("createdAt", "desc"), limit(10));
+                    let limitCount = 10;
+                    try {
+                        const settingsSnap = await getDoc(doc(db, "rules", "settings"));
+                        if (settingsSnap.exists()) {
+                            limitCount = settingsSnap.data().indexCarouselLimit || 10;
+                        }
+                    } catch (e) {
+                        console.warn("Failed to load settings for carousel limit", e);
+                    }
+
+                    const q = query(collection(db, "photos"), orderBy("createdAt", "desc"), limit(limitCount));
                     const querySnapshot = await getDocs(q);
 
                     querySnapshot.forEach((doc) => {

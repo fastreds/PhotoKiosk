@@ -7,6 +7,7 @@
 import { db, storage } from './js/firebase-config.js';
 import { collection, getDocs, addDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import QRCode from "https://esm.sh/qrcode";
 
 // --- 1. DOM Element Selection ---
 const mainMenu = document.getElementById('main-menu');
@@ -37,7 +38,7 @@ let selectedFrameAspectRatio = 4 / 5;
 let capturedPhotos = [];
 let settings = { countdownDuration: 3, photoInterval: 2 };
 let inactivityTimeout = null;
-const INACTIVITY_LIMIT = 60000; // 1 minute
+const DEFAULT_INACTIVITY_LIMIT = 60000; // 1 minute default
 
 // --- 3. Core Functions ---
 
@@ -242,9 +243,18 @@ async function loadFramesForSelection() {
             // Only show available frames
             if (frame.available !== false) {
                 const img = document.createElement('img');
-                img.src = frame.url;
                 img.alt = frame.name;
                 img.crossOrigin = "Anonymous"; // Important for canvas
+
+                // Try loading from URL, fallback to local frames folder
+                img.src = frame.url;
+                img.onerror = function () {
+                    if (!this.src.includes(`frames/${encodeURIComponent(frame.name)}`)) {
+                        console.warn(`Failed to load frame from ${frame.url}, trying local fallback.`);
+                        this.src = `frames/${frame.name}`;
+                    }
+                };
+
                 img.addEventListener('click', () => selectFrame(img, frame));
                 framesContainerMain.appendChild(img);
             }
@@ -342,10 +352,8 @@ async function sendEmail() {
 async function generateQrCode(photoUrl) {
     try {
         const downloadUrl = `${window.location.origin}/download.html?photo=${encodeURIComponent(photoUrl)}`;
-        const response = await fetch(`/qr-code?photoUrl=${encodeURIComponent(downloadUrl)}`);
-        if (!response.ok) throw new Error('Failed to fetch QR code.');
-        const qrCodeHtml = await response.text();
-        qrCodeContainer.innerHTML = qrCodeHtml;
+        const qrCodeDataUrl = await QRCode.toDataURL(downloadUrl);
+        qrCodeContainer.innerHTML = `<img src="${qrCodeDataUrl}" alt="QR Code" />`;
     } catch (error) {
         console.error("Error generating QR code:", error);
         qrCodeContainer.innerHTML = '<p>No se pudo generar el código QR.</p>';
@@ -386,9 +394,10 @@ function resetToMainMenu() {
 
 function startInactivityTimer() {
     if (inactivityTimeout) clearTimeout(inactivityTimeout);
+    const timeoutDuration = (settings.inactivityTimeout || 60) * 1000;
     inactivityTimeout = setTimeout(() => {
         resetToMainMenu();
-    }, INACTIVITY_LIMIT);
+    }, timeoutDuration);
 }
 
 // --- 5. Initial Load ---
