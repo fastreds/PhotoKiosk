@@ -1,103 +1,175 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Frame Management</title>
+    <title>Admin - Photo Kiosk</title>
     <link rel="stylesheet" href="vendor/sweetalert2.min.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="admin.css">
+    <!-- Google Fonts for a premium look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🖼️ Frame Management 🖼️</h1>
-            <p>Add or create new frames for the kiosk.</p>
+    <div id="login-container" class="login-container">
+        <div class="login-card">
+            <h2>Iniciar Sesión</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-email">Correo Electrónico</label>
+                    <input type="email" id="login-email" required placeholder="admin@ejemplo.com">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-main">Entrar</button>
+                <p id="login-error" class="error-message"></p>
+            </form>
         </div>
+    </div>
 
-        <div id="admin-content">
-            <!-- Theme Settings -->
-            <div class="admin-section">
-                <h2>Theme Settings</h2>
-                <div class="theme-switcher">
-                    <span>Dark Mode</span>
+    <div id="admin-layout" class="admin-layout" style="display: none;">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3>Photo Kiosk</h3>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-section="section-frames">
+                    <span>🖼️</span> Marcos
+                </button>
+                <button class="nav-item" data-section="section-gallery">
+                    <span>📷</span> Galería
+                </button>
+                <button class="nav-item" data-section="section-settings">
+                    <span>⚙️</span> Configuración
+                </button>
+                <button class="nav-item" data-section="section-email">
+                    <span>📧</span> Correos
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="theme-switcher-sidebar">
+                    <span>Modo Oscuro</span>
                     <label class="toggle-switch">
                         <input type="checkbox" id="theme-toggle">
                         <span class="slider"></span>
                     </label>
                 </div>
+                <button id="logout-btn" class="btn-logout">Cerrar Sesión</button>
+                <a href="/" class="back-link-sidebar">Volver al Kiosco</a>
             </div>
+        </aside>
 
-            <!-- Capture Settings -->
-            <div class="admin-section">
-                <h2>Capture Settings</h2>
-                <div class="setting-item">
-                    <label for="countdown-duration">Countdown Duration (seconds):</label>
-                    <input type="number" id="countdown-duration" min="1" max="10">
-                </div>
-                <div class="setting-item">
-                    <label for="photo-interval">Photo Interval (seconds):</label>
-                    <input type="number" id="photo-interval" min="1" max="5">
-                </div>
-                <button id="save-settings-btn" class="btn-main">Save Settings</button>
-            </div>
+        <!-- Main Content -->
+        <main class="main-content">
 
             <!-- Frame Management -->
-            <div class="admin-section">
-                <h2>Existing Frames</h2>
-                <div id="frames-list"></div>
-            </div>
+            <section id="section-frames" class="content-section active">
+                <div class="section-header">
+                    <h2>Gestión de Marcos</h2>
+                    <p>Sube y gestiona los marcos disponibles para las fotos.</p>
+                </div>
 
-            <!-- Upload Frame -->
-            <div class="admin-section">
-                <h2>Upload Custom Frame</h2>
-                <p>Choose a transparent PNG file to use as a frame.</p>
-                <button id="upload-frame-btn" class="btn-secondary">Upload Frame</button>
-                <input type="file" id="frame-upload-input" class="hidden" accept="image/png">
-            </div>
+                <div class="actions-bar">
+                    <button id="upload-frame-btn" class="btn-primary">Subir Nuevo Marco</button>
+                    <input type="file" id="frame-upload-input" accept="image/*" hidden>
+                </div>
+                <div id="frames-list" class="grid-container"></div>
+            </section>
 
             <!-- Photo Gallery Maintenance -->
-            <div class="admin-section">
-                <h2>Photo Gallery Maintenance</h2>
-                <p>Manage captured photos (Delete to free up space).</p>
-                <div id="photo-gallery-list"
-                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 15px;">
+            <section id="section-gallery" class="content-section">
+                <div class="section-header">
+                    <h2>Galería de Fotos</h2>
+                    <p>Gestiona las fotos capturadas.</p>
+                </div>
+
+                <div class="gallery-toolbar">
+                    <div class="selection-controls">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="gallery-select-all">
+                            Seleccionar Todo
+                        </label>
+                        <button id="gallery-delete-selected" class="btn-danger" disabled>Eliminar Seleccionados</button>
+                    </div>
+                    <div class="pagination-controls">
+                        <button id="gallery-prev" class="btn-secondary" disabled>Anterior</button>
+                        <span id="gallery-page-indicator">Página 1</span>
+                        <button id="gallery-next" class="btn-secondary">Siguiente</button>
+                    </div>
+                </div>
+
+                <div id="photo-gallery-list" class="gallery-grid small-grid">
                     <!-- Photos will be loaded here -->
                 </div>
-            </div>
+            </section>
+
+            <!-- Capture Settings -->
+            <section id="section-settings" class="content-section">
+                <div class="section-header">
+                    <h2>Configuración de Captura</h2>
+                    <p>Ajusta los tiempos y límites del kiosco.</p>
+                </div>
+                <div class="settings-card">
+                    <div class="setting-item">
+                        <label for="countdown-duration">Cuenta Regresiva (segundos):</label>
+                        <input type="number" id="countdown-duration" min="1" max="10">
+                    </div>
+                    <div class="setting-item">
+                        <label for="photo-interval">Intervalo entre Fotos (segundos):</label>
+                        <input type="number" id="photo-interval" min="1" max="5">
+                    </div>
+                    <div class="setting-item">
+                        <label for="inactivity-timeout">Tiempo de Inactividad (segundos):</label>
+                        <input type="number" id="inactivity-timeout" min="10" max="300" placeholder="60">
+                    </div>
+                    <div class="setting-item">
+                        <label for="index-carousel-limit">Límite Carrusel Inicio (fotos):</label>
+                        <input type="number" id="index-carousel-limit" min="1" max="50" placeholder="10">
+                    </div>
+                    <button id="save-settings-btn" class="btn-main">Guardar Configuración</button>
+                </div>
+            </section>
 
             <!-- Email Configuration -->
-            <div class="admin-section">
-                <h2>Email Configuration</h2>
-                <div class="setting-item">
-                    <label>Sender Name:</label>
-                    <input type="text" id="email-sender-name" placeholder="Photo Kiosk">
+            <section id="section-email" class="content-section">
+                <div class="section-header">
+                    <h2>Configuración de Correo</h2>
+                    <p>Personaliza el correo que reciben los usuarios.</p>
                 </div>
-                <div class="setting-item">
-                    <label>Email Subject:</label>
-                    <input type="text" id="email-subject" placeholder="Your Photo!">
-                </div>
-                <div class="setting-item">
-                    <label>HTML Template (Use {{photoUrl}} for image):</label>
-                    <textarea id="email-template" rows="5"
-                        style="width: 100%; padding: 10px; border-radius: 5px;"></textarea>
-                </div>
-                <button id="save-email-config-btn" class="btn-main">Save Email Config</button>
-            </div>
 
-            <!-- Email Logs -->
-            <div class="admin-section">
-                <h2>Email Logs</h2>
-                <div style="overflow-x: auto;">
-                    <table id="email-logs-table" style="width: 100%; border-collapse: collapse;">
+                <div class="settings-card">
+                    <div class="setting-item">
+                        <label>Nombre del Remitente:</label>
+                        <input type="text" id="email-sender-name" placeholder="Photo Kiosk">
+                    </div>
+                    <div class="setting-item">
+                        <label>Asunto del Correo:</label>
+                        <input type="text" id="email-subject" placeholder="¡Tu Foto!">
+                    </div>
+                    <div class="setting-item">
+                        <label>Plantilla HTML (Usa {{photoUrl}} para la imagen):</label>
+                        <textarea id="email-template" rows="5" class="code-input"></textarea>
+                    </div>
+                    <button id="save-email-config-btn" class="btn-main">Guardar Configuración de Correo</button>
+                </div>
+
+                <div class="section-header" style="margin-top: 2rem;">
+                    <h2>Registro de Correos</h2>
+                </div>
+                <div class="table-container">
+                    <table id="email-logs-table">
                         <thead>
-                            <tr style="background: #f0f0f0; text-align: left;">
-                                <th style="padding: 10px;">Date</th>
-                                <th style="padding: 10px;">Email</th>
-                                <th style="padding: 10px;">Status</th>
-                                <th style="padding: 10px;">Actions</th>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Correo</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -105,13 +177,30 @@
                         </tbody>
                     </table>
                 </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Photo Preview Modal -->
+    <div id="preview-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="preview-container">
+                <div class="preview-image-wrapper">
+                    <img id="preview-image" src="" alt="Vista Previa">
+                </div>
+                <div class="preview-info">
+                    <h3>Código QR</h3>
+                    <div id="preview-qr"></div>
+                    <p>Escanea para descargar</p>
+                </div>
             </div>
         </div>
-        <a href="/" class="back-link">Back to Kiosk</a>
     </div>
 
     <script src="vendor/sweetalert2.min.js"></script>
-    <script src="admin.js"></script>
+    <script type="module" src="admin.js"></script>
 </body>
 
 </html>

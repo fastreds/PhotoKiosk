@@ -1,176 +1,202 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // --- Password Protection ---
-    const checkPassword = () => {
-        const password = sessionStorage.getItem('adminPassword');
-        if (password === 'admin123') {
-            document.getElementById('admin-content').style.display = 'block';
-        } else {
-            askForPassword();
-        }
-    };
 
-    const askForPassword = () => {
-        Swal.fire({
-            title: 'Admin Access',
-            input: 'password',
-            inputPlaceholder: 'Enter your password',
-            inputAttributes: {
-                autocapitalize: 'off',
-                autocorrect: 'off'
-            },
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            showCancelButton: true,
-            confirmButtonText: 'Log in',
-            cancelButtonText: 'Back to Kiosk',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                if (result.value === 'admin123') {
-                    sessionStorage.setItem('adminPassword', result.value);
-                    document.getElementById('admin-content').style.display = 'block';
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Incorrect Password',
-                        text: 'Please try again.'
-                    }).then(askForPassword);
-                }
+import { auth, db, storage } from './js/firebase-config.js';
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, setDoc, query, orderBy, limit, getDoc, startAfter, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import removeBackground from "https://esm.sh/@imgly/background-removal@1.4.5";
+
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Authentication ---
+    const loginContainer = document.getElementById('login-container');
+    const adminLayout = document.getElementById('admin-layout');
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    const checkAuth = () => {
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginContainer.classList.add('hidden');
+                adminLayout.style.display = 'flex';
+                loadData();
             } else {
-                window.location.href = '/';
+                loginContainer.classList.remove('hidden');
+                adminLayout.style.display = 'none';
+                loginForm.reset();
+                loginError.textContent = '';
             }
         });
     };
+
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        loginError.textContent = 'Iniciando sesión...';
+
+        signInWithEmailAndPassword(auth, email, password)
+            .then(() => {
+                loginError.textContent = '';
+            })
+            .catch((error) => {
+                console.error(error);
+                loginError.textContent = 'Correo o contraseña inválidos.';
+            });
+    });
+
+    logoutBtn.addEventListener('click', () => {
+        signOut(auth).then(() => {
+            // Sign-out successful.
+        }).catch((error) => {
+            console.error(error);
+        });
+    });
+
+    // --- Sidebar Navigation ---
+    const navItems = document.querySelectorAll('.nav-item');
+    const sections = document.querySelectorAll('.content-section');
+
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            navItems.forEach(nav => nav.classList.remove('active'));
+            sections.forEach(sec => sec.classList.remove('active'));
+            item.classList.add('active');
+            const sectionId = item.dataset.section;
+            document.getElementById(sectionId).classList.add('active');
+        });
+    });
 
     // --- Frame Management ---
     const framesList = document.getElementById('frames-list');
 
     const loadFrames = async () => {
-        const response = await fetch('/admin/frames');
-        const frames = await response.json();
-        framesList.innerHTML = '';
-
-        frames.forEach(frame => {
-            const item = document.createElement('div');
-            item.className = 'frame-item';
-            item.innerHTML = `
-                <img src="/frames/${frame.name}" alt="${frame.name}">
-                <p>${frame.name}</p>
-                <div class="frame-actions">
-                    <label class="toggle-switch">
-                        <span>Available</span>
-                        <input type="checkbox" ${frame.available ? 'checked' : ''} data-name="${frame.name}">
-                        <span class="slider"></span>
-                    </label>
-                    <button class="btn-edit" data-name="${frame.name}">Edit</button>
-                    <button class="btn-delete" data-name="${frame.name}">Delete</button>
-                    <button class="btn-remove-bg" data-name="${frame.name}">Remove BG</button>
-                </div>
-            `;
-            framesList.appendChild(item);
-        });
+        framesList.innerHTML = '<p>Cargando marcos...</p>';
+        try {
+            const querySnapshot = await getDocs(collection(db, "frames"));
+            framesList.innerHTML = '';
+            querySnapshot.forEach((docSnap) => {
+                const frame = docSnap.data();
+                const item = document.createElement('div');
+                item.className = 'frame-item';
+                item.innerHTML = `
+                    <img src="${frame.url}" alt="${frame.name}" crossorigin="anonymous" onerror="this.onerror=null; this.src='frames/${frame.name}';">
+                    <p>${frame.name}</p>
+                    <div class="frame-actions">
+                        <label class="toggle-switch" style="justify-content: center; margin-bottom: 10px;">
+                            <input type="checkbox" ${frame.available !== false ? 'checked' : ''} data-id="${docSnap.id}">
+                            <span class="slider"></span>
+                        </label>
+                        <button class="btn-edit" data-id="${docSnap.id}" data-name="${frame.name}">Editar Nombre</button>
+                        <button class="btn-delete" data-id="${docSnap.id}" data-name="${frame.name}">Eliminar</button>
+                        <button class="btn-remove-bg" data-id="${docSnap.id}" data-url="${frame.url}">Quitar Fondo</button>
+                    </div>
+                `;
+                framesList.appendChild(item);
+            });
+        } catch (e) {
+            console.error(e);
+            framesList.innerHTML = '<p>Error cargando marcos.</p>';
+        }
     };
 
     framesList.addEventListener('click', async (event) => {
         const target = event.target;
-        const frameName = target.dataset.name;
+        const frameId = target.dataset.id;
 
-        if (!frameName) return;
+        if (!frameId) return;
 
-        // Toggle availability
         if (target.matches('input[type="checkbox"]')) {
-            await fetch('/admin/toggle-frame', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: frameName })
+            await updateDoc(doc(db, "frames", frameId), {
+                available: target.checked
             });
         }
 
-        // Delete frame
+        if (target.matches('.btn-edit')) {
+            const currentName = target.dataset.name;
+            const extension = currentName.substring(currentName.lastIndexOf('.'));
+            const nameWithoutExt = currentName.substring(0, currentName.lastIndexOf('.'));
+
+            const { value: newName } = await Swal.fire({
+                title: 'Editar Nombre del Marco',
+                input: 'text',
+                inputValue: nameWithoutExt,
+                showCancelButton: true,
+                confirmButtonText: 'Guardar',
+                cancelButtonText: 'Cancelar',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return '¡Debes escribir un nombre!';
+                    }
+                }
+            });
+
+            if (newName) {
+                const finalName = newName + extension;
+                try {
+                    await updateDoc(doc(db, "frames", frameId), {
+                        name: finalName
+                    });
+                    Swal.fire('¡Actualizado!', 'El nombre ha sido cambiado.', 'success');
+                    loadFrames();
+                } catch (e) {
+                    Swal.fire('Error', e.message, 'error');
+                }
+            }
+        }
+
         if (target.matches('.btn-delete')) {
+            const frameName = target.dataset.name;
             Swal.fire({
-                title: 'Are you sure?',
-                text: `This will permanently delete ${frameName}. You won't be able to revert this!`,
+                title: '¿Estás seguro?',
+                text: "Esto eliminará permanentemente el marco.",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#d9534f',
-                confirmButtonText: 'Yes, delete it!'
+                confirmButtonColor: '#ef4444',
+                cancelButtonText: 'Cancelar',
+                confirmButtonText: 'Sí, eliminar'
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    const response = await fetch('/admin/delete-frame', {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: frameName })
-                    });
-                    if (response.ok) {
-                        Swal.fire('Deleted!', 'The frame has been deleted.', 'success');
+                    try {
+                        const storageRef = ref(storage, `public/frames/${frameName}`);
+                        await deleteObject(storageRef).catch(e => console.warn("File not found in storage", e));
+                        await deleteDoc(doc(db, "frames", frameId));
+                        Swal.fire('¡Eliminado!', 'El marco ha sido eliminado.', 'success');
                         loadFrames();
-                    } else {
-                        Swal.fire('Error!', 'Could not delete the frame.', 'error');
+                    } catch (e) {
+                        Swal.fire('Error', e.message, 'error');
                     }
                 }
             });
         }
 
-        // Remove background
         if (target.matches('.btn-remove-bg')) {
+            const frameUrl = target.dataset.url;
             Swal.fire({
-                title: 'Processing...',
-                text: 'Removing background from the frame. Please wait.',
+                title: 'Procesando...',
+                text: 'Quitando fondo (esto puede tardar un poco)...',
                 allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
+                didOpen: () => Swal.showLoading()
             });
 
-            const response = await fetch('/admin/remove-background', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: frameName })
-            });
-
-            if (response.ok) {
-                Swal.fire('Success!', 'Background removed successfully.', 'success');
-                loadFrames(); // Recargar para ver el cambio
-            } else {
-                Swal.fire('Error!', 'Could not remove the background.', 'error');
-            }
-        }
-
-        // Edit frame
-        if (target.matches('.btn-edit')) {
-            const { value: file } = await Swal.fire({
-                title: `Update ${frameName}`,
-                text: 'Upload a new PNG file to replace the existing frame.',
-                input: 'file',
-                inputAttributes: {
-                    'accept': 'image/png',
-                    'aria-label': 'Upload your frame'
-                },
-                showCancelButton: true,
-                confirmButtonText: 'Upload'
-            });
-
-            if (file) {
-                const formData = new FormData();
-                // Use the original frame name to overwrite it
-                formData.append('frame', file, frameName);
-
-                const response = await fetch('/save-frame', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (response.ok) {
-                    Swal.fire('Success!', 'Frame updated successfully.', 'success');
-                    loadFrames(); // Refresh to show the new image
-                } else {
-                    Swal.fire('Error!', 'Could not update the frame.', 'error');
-                }
+            try {
+                const response = await fetch(frameUrl);
+                const blob = await response.blob();
+                const newBlob = await removeBackground(blob);
+                const docSnap = await getDoc(doc(db, "frames", frameId));
+                const frameName = docSnap.data().name;
+                const storageRef = ref(storage, `public/frames/${frameName}`);
+                await uploadBytes(storageRef, newBlob);
+                const newUrl = await getDownloadURL(storageRef);
+                await updateDoc(doc(db, "frames", frameId), { url: newUrl });
+                Swal.fire('¡Éxito!', 'Fondo eliminado.', 'success');
+                loadFrames();
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'Falló al quitar el fondo.', 'error');
             }
         }
     });
 
-    // --- Frame Uploader ---
     const uploadFrameBtn = document.getElementById('upload-frame-btn');
     const frameUploadInput = document.getElementById('frame-upload-input');
 
@@ -181,28 +207,315 @@ document.addEventListener('DOMContentLoaded', () => {
     frameUploadInput.addEventListener('change', async (event) => {
         const file = event.target.files[0];
         if (!file) return;
-
-        const formData = new FormData();
-        formData.append('frame', file, file.name);
-
-        const response = await fetch('/save-frame', {
-            method: 'POST',
-            body: formData
-        });
-
-        const result = await response.json();
-        if (result.success) {
-            Swal.fire('Success!', 'Frame uploaded successfully.', 'success');
-            loadFrames(); // Refresh the list
-        } else {
-            Swal.fire('Error', 'Could not upload the frame.', 'error');
+        const storageRef = ref(storage, `public/frames/${file.name}`);
+        try {
+            Swal.fire({ title: 'Subiendo...', didOpen: () => Swal.showLoading() });
+            await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(storageRef);
+            await addDoc(collection(db, "frames"), {
+                name: file.name,
+                url: url,
+                available: true,
+                createdAt: new Date().toISOString()
+            });
+            Swal.fire('¡Éxito!', 'Marco subido.', 'success');
+            loadFrames();
+        } catch (e) {
+            Swal.fire('Error', e.message, 'error');
         }
         frameUploadInput.value = '';
     });
 
+    // --- Photo Gallery (Enhanced) ---
+    const photoGalleryList = document.getElementById('photo-gallery-list');
+    const selectAllCheckbox = document.getElementById('gallery-select-all');
+    const deleteSelectedBtn = document.getElementById('gallery-delete-selected');
+    const prevPageBtn = document.getElementById('gallery-prev');
+    const nextPageBtn = document.getElementById('gallery-next');
+    const pageIndicator = document.getElementById('gallery-page-indicator');
+    const previewModal = document.getElementById('preview-modal');
+    const previewImage = document.getElementById('preview-image');
+    const previewQr = document.getElementById('preview-qr');
+    const closeModal = document.querySelector('.close-modal');
+
+    let currentPage = 1;
+    const pageSize = 20;
+    let pageStack = []; // Stores the lastVisible doc of previous pages
+    let lastVisible = null;
+    let selectedPhotos = new Set();
+    let currentPhotos = []; // Store current page photos for selection logic
+
+    const loadPhotoGallery = async (direction = 'first') => {
+        photoGalleryList.innerHTML = '<p>Cargando fotos...</p>';
+        selectAllCheckbox.checked = false;
+        selectedPhotos.clear();
+        updateSelectionUI();
+
+        try {
+            let q;
+            const photosRef = collection(db, "photos");
+
+            if (direction === 'first') {
+                q = query(photosRef, orderBy("createdAt", "desc"), limit(pageSize));
+                pageStack = [];
+                currentPage = 1;
+            } else if (direction === 'next') {
+                q = query(photosRef, orderBy("createdAt", "desc"), startAfter(lastVisible), limit(pageSize));
+                pageStack.push(lastVisible);
+                currentPage++;
+            } else if (direction === 'prev') {
+                const prevLastVisible = pageStack.pop();
+                // If popping brings us to empty stack, we are at page 1 (start from null/beginning)
+                // But wait, pageStack[0] is end of page 1.
+                // To go to Page 1, we query from start.
+                // To go to Page 2, we startAfter(pageStack[0]).
+                // So if we are at Page 3, stack has [endPage1, endPage2].
+                // Pop endPage2. We want to startAfter endPage1.
+                // If stack is empty after pop, we query from start.
+
+                // Correction:
+                // Page 1: Stack []
+                // Click Next -> Stack [endPage1], Current Page 2. Query startAfter(endPage1).
+                // Click Next -> Stack [endPage1, endPage2], Current Page 3. Query startAfter(endPage2).
+                // Click Prev (at Page 3) -> Pop endPage2. Stack [endPage1]. Current Page 2. Query startAfter(endPage1).
+                // Click Prev (at Page 2) -> Pop endPage1. Stack []. Current Page 1. Query from start.
+
+                // Logic above modifies stack before query.
+                // But 'prevLastVisible' is what we just popped (the end of the PREVIOUS page? No, the end of the page BEFORE the previous one? No.)
+
+                // Let's restart logic:
+                // Stack stores the 'startAfter' cursor for each page index.
+                // Page 1: cursor null.
+                // Page 2: cursor endPage1.
+                // Stack: [null, endPage1, endPage2...]
+
+                // Let's use a simpler stack approach.
+                // When going Next, push current 'lastVisible' to stack.
+                // When going Prev, pop from stack and use that as 'startAfter'.
+                // But wait, if I am on Page 2, stack has [endPage1].
+                // If I go Prev, I need to start from null. 
+                // So stack should store the START cursor of the current page?
+
+                // Let's stick to:
+                // Page 1: Query start.
+                // Page 2: Query startAfter(endPage1).
+                // Stack will store the 'startAfter' param for the current page.
+                // Page 1: Stack [null]
+                // Next -> Page 2. Stack [null, endPage1].
+                // Prev -> Pop. Stack [null]. Use null.
+
+                // Re-implementing with this logic:
+                // direction 'prev' means we pop the current page start, and peek the previous one.
+                // Actually, simpler:
+                // pageStack stores the start cursor for each page.
+                // Init: pageStack = [null]
+                // Next: push lastVisible (end of current page) to stack. Query startAfter(lastVisible).
+                // Prev: pop current page start. Peek new top. Query startAfter(newTop).
+
+                // Wait, if I am on Page 1, stack is [null].
+                // Next: stack becomes [null, endPage1]. Query startAfter(endPage1).
+                // Prev (from Page 2): pop endPage1. Stack is [null]. Query startAfter(null).
+
+                // Correct.
+
+                // However, I need to handle 'direction' arg properly.
+                // If direction is 'first', stack = [null].
+            }
+
+            // Adjust logic based on direction
+            if (direction === 'first') {
+                pageStack = [null];
+                currentPage = 1;
+                q = query(photosRef, orderBy("createdAt", "desc"), limit(pageSize));
+            } else if (direction === 'next') {
+                pageStack.push(lastVisible);
+                currentPage++;
+                q = query(photosRef, orderBy("createdAt", "desc"), startAfter(lastVisible), limit(pageSize));
+            } else if (direction === 'prev') {
+                pageStack.pop();
+                currentPage--;
+                const startCursor = pageStack[pageStack.length - 1];
+                if (startCursor) {
+                    q = query(photosRef, orderBy("createdAt", "desc"), startAfter(startCursor), limit(pageSize));
+                } else {
+                    q = query(photosRef, orderBy("createdAt", "desc"), limit(pageSize));
+                }
+            }
+
+            const querySnapshot = await getDocs(q);
+
+            // Update lastVisible for next iteration
+            lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+
+            // Update UI controls
+            pageIndicator.textContent = `Página ${currentPage}`;
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = querySnapshot.empty || querySnapshot.docs.length < pageSize;
+
+            photoGalleryList.innerHTML = '';
+            currentPhotos = [];
+
+            if (querySnapshot.empty) {
+                photoGalleryList.innerHTML = '<p>No hay fotos.</p>';
+                return;
+            }
+
+            querySnapshot.forEach((docSnap) => {
+                const photo = docSnap.data();
+                currentPhotos.push({ id: docSnap.id, ...photo });
+
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.dataset.id = docSnap.id;
+
+                item.innerHTML = `
+                    <input type="checkbox" class="gallery-checkbox" data-id="${docSnap.id}">
+                    <img src="${photo.url}" loading="lazy" alt="Foto">
+                `;
+
+                // Click on item (except checkbox) opens preview
+                item.addEventListener('click', (e) => {
+                    if (e.target.type !== 'checkbox') {
+                        openPreview(photo.url);
+                    }
+                });
+
+                // Checkbox handling
+                const checkbox = item.querySelector('.gallery-checkbox');
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        selectedPhotos.add(docSnap.id);
+                        item.classList.add('selected');
+                    } else {
+                        selectedPhotos.delete(docSnap.id);
+                        item.classList.remove('selected');
+                    }
+                    updateSelectionUI();
+                });
+
+                photoGalleryList.appendChild(item);
+            });
+
+        } catch (e) {
+            console.error(e);
+            photoGalleryList.innerHTML = '<p>Error cargando galería.</p>';
+        }
+    };
+
+    const updateSelectionUI = () => {
+        deleteSelectedBtn.disabled = selectedPhotos.size === 0;
+        deleteSelectedBtn.textContent = selectedPhotos.size > 0 ? `Eliminar (${selectedPhotos.size})` : 'Eliminar Seleccionados';
+
+        // Update Select All checkbox state
+        const allSelected = currentPhotos.length > 0 && currentPhotos.every(p => selectedPhotos.has(p.id));
+        selectAllCheckbox.checked = allSelected;
+    };
+
+    selectAllCheckbox.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        const checkboxes = document.querySelectorAll('.gallery-checkbox');
+
+        checkboxes.forEach(cb => {
+            cb.checked = isChecked;
+            const id = cb.dataset.id;
+            const item = cb.closest('.gallery-item');
+
+            if (isChecked) {
+                selectedPhotos.add(id);
+                item.classList.add('selected');
+            } else {
+                selectedPhotos.delete(id);
+                item.classList.remove('selected');
+            }
+        });
+        updateSelectionUI();
+    });
+
+    deleteSelectedBtn.addEventListener('click', async () => {
+        if (selectedPhotos.size === 0) return;
+
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: `Vas a eliminar ${selectedPhotos.size} fotos.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonText: 'Cancelar',
+            confirmButtonText: 'Sí, eliminar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'Eliminando...', didOpen: () => Swal.showLoading() });
+
+                const batch = writeBatch(db);
+                const idsToDelete = Array.from(selectedPhotos);
+
+                // Note: Firestore batch limit is 500. Assuming selection is within limits or we'd need to chunk.
+                // Also need to delete from Storage.
+
+                try {
+                    const deletePromises = idsToDelete.map(async (id) => {
+                        // Find photo data to get name for storage delete
+                        // We might not have it if we didn't store it in 'currentPhotos' properly or if it's mixed.
+                        // But we have 'currentPhotos' which are the ones displayed.
+                        // Wait, selectedPhotos might contain IDs from previous pages if we kept selection across pages?
+                        // For simplicity, let's assume selection clears on page change (implemented above).
+
+                        const photo = currentPhotos.find(p => p.id === id);
+                        if (photo) {
+                            // Delete from Storage
+                            const storageRef = ref(storage, `public/photos/${photo.name}`);
+                            await deleteObject(storageRef).catch(e => console.warn("Storage delete failed", e));
+
+                            // Add to batch
+                            const docRef = doc(db, "photos", id);
+                            batch.delete(docRef);
+                        }
+                    });
+
+                    await Promise.all(deletePromises);
+                    await batch.commit();
+
+                    Swal.fire('¡Eliminado!', '', 'success');
+                    loadPhotoGallery('first'); // Reload from start
+                } catch (e) {
+                    console.error(e);
+                    Swal.fire('Error', 'Hubo un problema eliminando algunas fotos.', 'error');
+                }
+            }
+        });
+    });
+
+    prevPageBtn.addEventListener('click', () => loadPhotoGallery('prev'));
+    nextPageBtn.addEventListener('click', () => loadPhotoGallery('next'));
+
+    // --- Preview Modal ---
+    const openPreview = (url) => {
+        previewImage.src = url;
+        previewQr.innerHTML = ''; // Clear previous QR
+
+        // Generate QR
+        new QRCode(previewQr, {
+            text: url,
+            width: 150,
+            height: 150
+        });
+
+        previewModal.classList.remove('hidden');
+    };
+
+    closeModal.addEventListener('click', () => {
+        previewModal.classList.add('hidden');
+    });
+
+    previewModal.addEventListener('click', (e) => {
+        if (e.target === previewModal) {
+            previewModal.classList.add('hidden');
+        }
+    });
+
+
     // --- Theme Management ---
     const themeToggle = document.getElementById('theme-toggle');
-
     const applyTheme = (theme) => {
         if (theme === 'dark') {
             document.body.classList.add('dark-theme');
@@ -212,240 +525,130 @@ document.addEventListener('DOMContentLoaded', () => {
             themeToggle.checked = false;
         }
     };
-
-    const loadTheme = () => {
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        applyTheme(savedTheme);
-    };
-
     themeToggle.addEventListener('change', () => {
         const newTheme = themeToggle.checked ? 'dark' : 'light';
         localStorage.setItem('theme', newTheme);
         applyTheme(newTheme);
     });
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    applyTheme(savedTheme);
+
 
     // --- Settings Management ---
     const countdownInput = document.getElementById('countdown-duration');
     const intervalInput = document.getElementById('photo-interval');
+    const inactivityInput = document.getElementById('inactivity-timeout');
+    const indexLimitInput = document.getElementById('index-carousel-limit');
     const saveSettingsBtn = document.getElementById('save-settings-btn');
 
     const loadSettings = async () => {
         try {
-            const response = await fetch('/settings');
-            const settings = await response.json();
-            countdownInput.value = settings.countdownDuration;
-            intervalInput.value = settings.photoInterval;
-        } catch (error) {
-            console.error("Error loading settings:", error);
-        }
+            const docSnap = await getDoc(doc(db, "rules", "settings"));
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                countdownInput.value = data.countdownDuration;
+                intervalInput.value = data.photoInterval;
+                inactivityInput.value = data.inactivityTimeout || 60;
+                indexLimitInput.value = data.indexCarouselLimit || 10;
+            }
+        } catch (e) { console.error(e); }
     };
 
     saveSettingsBtn.addEventListener('click', async () => {
-        const settings = {
-            countdownDuration: countdownInput.value,
-            photoInterval: intervalInput.value
-        };
-
         try {
-            const response = await fetch('/admin/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(settings)
+            await setDoc(doc(db, "rules", "settings"), {
+                countdownDuration: parseInt(countdownInput.value),
+                photoInterval: parseInt(intervalInput.value),
+                inactivityTimeout: parseInt(inactivityInput.value),
+                indexCarouselLimit: parseInt(indexLimitInput.value)
             });
-            const result = await response.json();
-            if (result.success) {
-                Swal.fire('Success!', 'Settings saved successfully.', 'success');
-            } else {
-                Swal.fire('Error!', 'Could not save settings.', 'error');
-            }
-        } catch (error) {
-            console.error("Error saving settings:", error);
-            Swal.fire('Error!', 'An error occurred.', 'error');
+            Swal.fire('¡Éxito!', 'Configuración guardada.', 'success');
+        } catch (e) {
+            Swal.fire('Error', e.message, 'error');
         }
     });
 
-    // --- Email Management ---
+    // --- Email Configuration ---
     const emailSenderInput = document.getElementById('email-sender-name');
     const emailSubjectInput = document.getElementById('email-subject');
     const emailTemplateInput = document.getElementById('email-template');
     const saveEmailConfigBtn = document.getElementById('save-email-config-btn');
-    const emailLogsTableBody = document.querySelector('#email-logs-table tbody');
 
     const loadEmailConfig = async () => {
         try {
-            const response = await fetch('/admin/email-config');
-            const config = await response.json();
-            emailSenderInput.value = config.senderName;
-            emailSubjectInput.value = config.subject;
-            emailTemplateInput.value = config.htmlTemplate;
-        } catch (error) {
-            console.error("Error loading email config:", error);
-        }
+            const docSnap = await getDoc(doc(db, "rules", "emailConfig"));
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                emailSenderInput.value = data.senderName;
+                emailSubjectInput.value = data.subject;
+                emailTemplateInput.value = data.htmlTemplate;
+            }
+        } catch (e) { console.error(e); }
     };
 
     saveEmailConfigBtn.addEventListener('click', async () => {
-        const config = {
-            senderName: emailSenderInput.value,
-            subject: emailSubjectInput.value,
-            htmlTemplate: emailTemplateInput.value
-        };
-
         try {
-            const response = await fetch('/admin/email-config', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config)
+            await setDoc(doc(db, "rules", "emailConfig"), {
+                senderName: emailSenderInput.value,
+                subject: emailSubjectInput.value,
+                htmlTemplate: emailTemplateInput.value
             });
-            if (response.ok) {
-                Swal.fire('Success!', 'Email configuration saved.', 'success');
-            } else {
-                Swal.fire('Error!', 'Could not save configuration.', 'error');
-            }
-        } catch (error) {
-            console.error("Error saving email config:", error);
+            Swal.fire('¡Éxito!', 'Configuración de correo guardada.', 'success');
+        } catch (e) {
+            Swal.fire('Error', e.message, 'error');
         }
     });
 
+    // --- Email Logs ---
+    const emailLogsTableBody = document.querySelector('#email-logs-table tbody');
     const loadEmailLogs = async () => {
         try {
-            const response = await fetch('/admin/emails');
-            const logs = await response.json();
+            const q = query(collection(db, "emailLogs"), orderBy("date", "desc"), limit(50));
+            const querySnapshot = await getDocs(q);
             emailLogsTableBody.innerHTML = '';
-
-            logs.forEach(log => {
+            querySnapshot.forEach((doc) => {
+                const log = doc.data();
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${new Date(log.date).toLocaleString()}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${log.email}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${log.status}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">
-                        <button class="btn-resend" data-email="${log.email}" data-photo="${log.photoUrl}" style="padding: 5px 10px; cursor: pointer;">Resend</button>
+                    <td>${new Date(log.date).toLocaleString()}</td>
+                    <td>${log.email}</td>
+                    <td>${log.status}</td>
+                    <td>
+                         <button class="btn-primary btn-resend" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" data-email="${log.email}" data-photo="${log.photoUrl}">Reenviar</button>
                     </td>
                 `;
                 emailLogsTableBody.appendChild(row);
             });
 
-            // Add event listeners to resend buttons
             document.querySelectorAll('.btn-resend').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const email = e.target.dataset.email;
                     const photoUrl = e.target.dataset.photo;
-
-                    Swal.fire({
-                        title: 'Resending...',
-                        didOpen: () => Swal.showLoading()
-                    });
-
                     try {
-                        const response = await fetch('/admin/resend-email', {
+                        const response = await fetch('/send-email', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email, photoUrl })
                         });
-                        if (response.ok) {
-                            Swal.fire('Success!', 'Email resent successfully.', 'success');
-                            loadEmailLogs(); // Refresh logs
-                        } else {
-                            Swal.fire('Error!', 'Failed to resend email.', 'error');
-                        }
-                    } catch (error) {
-                        console.error("Error resending email:", error);
-                        Swal.fire('Error!', 'An error occurred.', 'error');
-                    }
+                        if (response.ok) Swal.fire('Enviado', '', 'success');
+                        else Swal.fire('Error', 'Falló el envío', 'error');
+                    } catch (err) { console.error(err); }
                 });
             });
 
-        } catch (error) {
-            console.error("Error loading email logs:", error);
+        } catch (e) {
+            console.error("Error loading logs", e);
+            emailLogsTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:red;">Error cargando registros: ${e.message}</td></tr>`;
         }
     };
 
-    // --- Photo Gallery Maintenance ---
-    const photoGalleryList = document.getElementById('photo-gallery-list');
-
-    const loadPhotoGallery = async () => {
-        try {
-            const response = await fetch('/photos');
-            const photos = await response.json();
-            photoGalleryList.innerHTML = '';
-
-            if (photos.length === 0) {
-                photoGalleryList.innerHTML = '<p>No photos found.</p>';
-                return;
-            }
-
-            photos.forEach(photoName => {
-                const photoCard = document.createElement('div');
-                photoCard.style.border = '1px solid #ddd';
-                photoCard.style.borderRadius = '8px';
-                photoCard.style.overflow = 'hidden';
-                photoCard.style.textAlign = 'center';
-                photoCard.style.background = '#fff';
-
-                const img = document.createElement('img');
-                img.src = `/photos/${photoName}`;
-                img.style.width = '100%';
-                img.style.height = '150px';
-                img.style.objectFit = 'cover';
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.textContent = 'Delete';
-                deleteBtn.style.background = '#ff4444';
-                deleteBtn.style.color = 'white';
-                deleteBtn.style.border = 'none';
-                deleteBtn.style.padding = '5px 10px';
-                deleteBtn.style.margin = '10px';
-                deleteBtn.style.cursor = 'pointer';
-                deleteBtn.style.borderRadius = '4px';
-
-                deleteBtn.addEventListener('click', async () => {
-                    const result = await Swal.fire({
-                        title: 'Are you sure?',
-                        text: "You won't be able to revert this!",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33',
-                        confirmButtonText: 'Yes, delete it!'
-                    });
-
-                    if (result.isConfirmed) {
-                        try {
-                            const response = await fetch('/admin/delete-photo', {
-                                method: 'DELETE',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ name: photoName })
-                            });
-                            if (response.ok) {
-                                Swal.fire('Deleted!', 'Your file has been deleted.', 'success');
-                                loadPhotoGallery(); // Refresh gallery
-                            } else {
-                                Swal.fire('Error!', 'Failed to delete photo.', 'error');
-                            }
-                        } catch (error) {
-                            console.error("Error deleting photo:", error);
-                            Swal.fire('Error!', 'An error occurred.', 'error');
-                        }
-                    }
-                });
-
-                photoCard.appendChild(img);
-                photoCard.appendChild(deleteBtn);
-                photoGalleryList.appendChild(photoCard);
-            });
-
-        } catch (error) {
-            console.error("Error loading photo gallery:", error);
-            photoGalleryList.innerHTML = '<p>Error loading photos.</p>';
-        }
+    const loadData = () => {
+        loadFrames();
+        loadSettings();
+        loadEmailConfig();
+        loadEmailLogs();
+        loadPhotoGallery('first');
     };
 
-    // Initial setup
-    loadTheme();
-    checkPassword();
-    loadFrames();
-    loadSettings();
-    loadEmailConfig();
-    loadEmailLogs();
-    loadPhotoGallery();
+    checkAuth();
 });

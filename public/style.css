@@ -168,6 +168,9 @@ body {
     width: 100%;
     height: 100%;
     pointer-events: none;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 /* 
@@ -363,37 +366,17 @@ input[type="text"]:focus {
    9. Media Queries for Responsiveness
    ================
 */
-@media (max-width: 768px) {
-    .container {
-        padding: 1.5rem;
-    }
 
-    .output-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
-    .photo-preview img {
-        max-width: 250px;
-    }
-
-    .header h1 {
-        font-size: 1.8rem;
-    }
-
-    #frames-container-main img {
-        width: 80px;
-        height: 100px;
-    }
-}
-
-@media (max-width: 480px) {
+/* --- Mobile Devices (Phones ~6") --- */
+@media (max-width: 600px) {
     body {
         padding: 0.5rem;
     }
 
     .container {
         padding: 1rem;
+        width: 100%;
+        border-top: 3px solid var(--secondary-color);
     }
 
     .header h1 {
@@ -402,14 +385,7 @@ input[type="text"]:focus {
 
     .header p {
         font-size: 0.9rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .btn-main,
-    .btn-secondary,
-    .btn-capture {
-        padding: 10px 20px;
-        font-size: 0.9rem;
+        margin-bottom: 1rem;
     }
 
     #frames-container-main {
@@ -418,8 +394,189 @@ input[type="text"]:focus {
     }
 
     #frames-container-main img {
-        width: 70px;
-        height: 87.5px;
+        width: 80px;
+        height: 100px;
+    }
+
+    .output-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .photo-preview img {
+        max-width: 100%;
+    }
+
+    .btn-main,
+    .btn-secondary,
+    .btn-capture {
+        width: 100%;
+        padding: 12px;
+        font-size: 1rem;
+    }
+
+    .camera-wrapper {
+        max-width: 100%;
+    }
+}
+
+/* --- Tablets (~10") --- */
+@media (min-width: 601px) and (max-width: 1024px) {
+    .container {
+        max-width: 90%;
+        padding: 2rem;
+    }
+
+    .header h1 {
+        font-size: 2rem;
+    }
+
+    #frames-container-main img {
+        width: 110px;
+        height: 137.5px;
+    }
+
+    .output-grid {
+        grid-template-columns: 1fr;
+        /* Stack on portrait tablets */
+        gap: 2rem;
+    }
+
+    /* If landscape tablet, maybe side-by-side */
+    @media (orientation: landscape) {
+        .output-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+}
+
+/* --- Large Vertical Screens (49" Kiosk - Portrait) --- */
+@media (min-width: 1080px) and (orientation: portrait) {
+    body {
+        padding: 2rem;
+        align-items: flex-start;
+        /* Start from top on very tall screens */
+    }
+
+    .container {
+        max-width: 90%;
+        padding: 4rem 3rem;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px var(--shadow-color);
+    }
+
+    .header .logo {
+        max-width: 250px;
+        /* Larger logo */
+        margin-bottom: 2rem;
+    }
+
+    .header h1 {
+        font-size: 3.5rem;
+        /* Much larger text */
+        margin-bottom: 1rem;
+    }
+
+    .header p {
+        font-size: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    /* Frames */
+    #frames-container-main {
+        gap: 2rem;
+        padding: 2rem;
+    }
+
+    #frames-container-main img {
+        width: 180px;
+        height: 225px;
+        border-width: 5px;
+    }
+
+    /* Camera */
+    .camera-wrapper {
+        max-width: 800px;
+        /* Larger camera view */
+        border-width: 4px;
+    }
+
+    /* Buttons */
+    .btn-main,
+    .btn-secondary,
+    .btn-capture {
+        padding: 20px 40px;
+        font-size: 1.8rem;
+        /* Giant buttons for easy touch */
+        border-radius: 15px;
+        margin-top: 1.5rem;
+    }
+
+    /* Output */
+    .output-grid {
+        grid-template-columns: 1fr;
+        /* Stack vertically */
+        gap: 4rem;
+    }
+
+    .photo-preview img {
+        max-width: 800px;
+        /* Huge preview */
+        border-width: 8px;
+    }
+
+    .qr-section,
+    .email-section {
+        padding: 3rem;
+    }
+
+    .qr-section h3,
+    .email-section h3 {
+        font-size: 2rem;
+    }
+
+    #qr-code-container img {
+        max-width: 300px;
+        /* Big QR code */
+    }
+
+    input[type="email"],
+    input[type="text"] {
+        padding: 20px;
+        font-size: 1.5rem;
+        height: auto;
+    }
+}
+
+/* --- Large Horizontal Screens (24" Desktop/Kiosk - Landscape) --- */
+@media (min-width: 1920px) {
+    .container {
+        max-width: 1400px;
+        /* Use more width */
+        padding: 3rem;
+    }
+
+    .header h1 {
+        font-size: 3rem;
+    }
+
+    .output-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: center;
+    }
+
+    .photo-preview img {
+        max-width: 500px;
+    }
+
+    .camera-wrapper {
+        max-width: 600px;
+    }
+
+    #frames-container-main img {
+        width: 140px;
+        height: 175px;
     }
 }
 
@@ -570,5 +727,121 @@ input[type="text"]:focus {
 
     100% {
         transform: translate(0, 0) rotate(0deg);
+    }
+}
+
+/* 
+   ================
+   12. Frame Preview (Added)
+   ================
+*/
+#frame-preview-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    margin: 2rem auto;
+    aspect-ratio: 4 / 5;
+    background-color: #e0e0e0;
+    /* Silhouette of people SVG */
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23999"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: center bottom;
+    background-size: 80%;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+#preview-frame-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+}
+
+/* 
+   ================
+   13. Carousel Styles (Moved & Adapted)
+   ================
+*/
+.carousel-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.carousel {
+    display: flex;
+    transition: transform 0.5s ease;
+}
+
+.carousel img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+/* Responsive Carousel */
+
+/* Mobile */
+@media (max-width: 600px) {
+    .carousel-container {
+        height: 200px;
+        /* Fixed height for mobile */
+    }
+
+    .carousel img {
+        height: 200px;
+    }
+}
+
+/* Tablet */
+@media (min-width: 601px) and (max-width: 1024px) {
+    .carousel-container {
+        height: 300px;
+    }
+
+    .carousel img {
+        height: 300px;
+    }
+}
+
+/* Vertical Kiosk (49") */
+@media (min-width: 1080px) and (orientation: portrait) {
+    .carousel-container {
+        height: 600px;
+        /* Much taller */
+        margin-bottom: 4rem;
+    }
+
+    .carousel img {
+        height: 600px;
+    }
+}
+
+/* Horizontal Kiosk (24") */
+@media (min-width: 1920px) {
+    .carousel-container {
+        height: 700px;
+        /* Increased height */
+        max-width: 1000px;
+        /* Increased width */
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .carousel img {
+        height: 700px;
+        object-fit: contain;
+        /* Ensure full image is visible */
     }
 }
