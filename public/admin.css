@@ -1,14 +1,18 @@
 :root {
     --bg-color: #f3f4f6;
-    --text-color: #1f2937;
+    --text-color: #333333;
+    /* Dark Gray */
     --sidebar-bg: #ffffff;
     --sidebar-text: #4b5563;
-    --sidebar-active-bg: #eff6ff;
-    --sidebar-active-text: #2563eb;
+    --sidebar-active-bg: #e0f2fe;
+    /* Light Blue tint */
+    --sidebar-active-text: #005DA4;
+    /* UCR Blue */
     --card-bg: #ffffff;
     --border-color: #e5e7eb;
-    --primary-color: #2563eb;
-    --primary-hover: #1d4ed8;
+    --primary-color: #005DA4;
+    /* UCR Blue */
+    --primary-hover: #004d8a;
     --danger-color: #ef4444;
     --success-color: #10b981;
     --input-bg: #f9fafb;
@@ -25,6 +29,7 @@ body.dark-theme {
     --sidebar-text: #9ca3af;
     --sidebar-active-bg: #374151;
     --sidebar-active-text: #60a5fa;
+    /* Lighter blue for dark mode */
     --card-bg: #1f2937;
     --border-color: #374151;
     --primary-color: #3b82f6;
@@ -34,6 +39,10 @@ body.dark-theme {
     --input-bg: #374151;
     --input-border: #4b5563;
     --modal-overlay: rgba(0, 0, 0, 0.8);
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {
@@ -49,27 +58,31 @@ body {
 .admin-layout {
     display: flex;
     min-height: 100vh;
+    width: 100%;
 }
 
 /* Sidebar */
 .sidebar {
-    width: 160px;
+    width: 180px;
     background-color: var(--sidebar-bg);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     padding: 1.5rem;
     position: fixed;
+    top: 0;
+    left: 0;
     height: 100vh;
     transition: background-color 0.3s, border-color 0.3s;
-    z-index: 10;
+    z-index: 50;
+    overflow-y: auto;
 }
 
 .sidebar-header h3 {
     margin: 0 0 2rem 0;
     font-size: 1.25rem;
     font-weight: 700;
-    color: var(--text-color);
+    color: var(--primary-color);
 }
 
 .sidebar-nav {
@@ -103,6 +116,7 @@ body {
 .nav-item.active {
     background-color: var(--sidebar-active-bg);
     color: var(--sidebar-active-text);
+    font-weight: 600;
 }
 
 .sidebar-footer {
@@ -116,12 +130,12 @@ body {
 /* Main Content */
 .main-content {
     flex: 1;
-    margin-left: 260px;
+    margin-left: 160px;
     /* Matches sidebar width */
     padding: 2rem;
-    max-width: calc(100vw - 260px);
-    /* Prevent overflow */
-    box-sizing: border-box;
+    width: calc(100% - 160px);
+    /* Explicit width calculation */
+    max-width: 100%;
 }
 
 .content-section {
@@ -153,6 +167,7 @@ body {
     font-size: 1.875rem;
     font-weight: 700;
     margin: 0 0 0.5rem 0;
+    color: var(--primary-color);
 }
 
 .section-header p {
@@ -250,7 +265,7 @@ input:focus,
 textarea:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 93, 164, 0.1);
 }
 
 .code-input {
@@ -415,6 +430,22 @@ textarea:focus {
 .btn-remove-bg:hover {
     background-color: var(--primary-color);
     color: white;
+}
+
+.btn-edit {
+    background-color: transparent;
+    border: 1px solid var(--sidebar-text);
+    color: var(--sidebar-text);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.btn-edit:hover {
+    background-color: var(--border-color);
+    color: var(--text-color);
 }
 
 /* Toggle Switch */
