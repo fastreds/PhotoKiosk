@@ -7,23 +7,6 @@
     <title>Kiosco Fotográfico Temático</title>
     <link rel="stylesheet" href="vendor/sweetalert2.min.css">
     <link rel="stylesheet" href="style.css">
-    <style>
-        .carousel-container {
-            position: relative;
-            width: 100%;
-            overflow: hidden;
-        }
-
-        .carousel {
-            display: flex;
-            transition: transform 0.5s ease;
-        }
-
-        .carousel img {
-            width: 100%;
-            height: auto;
-        }
-    </style>
 </head>
 
 <body>
@@ -106,6 +89,11 @@
             <h2>Paso 1: Elige tu marco favorito</h2>
             <p>Selecciona el marco que más te guste para tu foto.</p>
             <div id="frames-container-main"></div>
+
+            <!-- Frame Preview Container -->
+            <div id="frame-preview-container" class="hidden">
+                <img id="preview-frame-img" src="" alt="Vista previa del marco">
+            </div>
             <button id="start-camera" class="btn-main" disabled>Tomar Foto</button>
         </div>
 

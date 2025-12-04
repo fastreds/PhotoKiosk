@@ -271,6 +271,14 @@ function selectFrame(imgElement, frameData) {
     // Hide carousel
     document.querySelector('.carousel-container').style.display = 'none';
 
+    // Show preview
+    const previewContainer = document.getElementById('frame-preview-container');
+    const previewImg = document.getElementById('preview-frame-img');
+    if (previewContainer && previewImg) {
+        previewContainer.classList.remove('hidden');
+        previewImg.src = frameData.url;
+    }
+
     selectedFrame = frameData;
 
     if (imgElement.naturalWidth && imgElement.naturalHeight) {
@@ -376,6 +384,12 @@ function resetToMainMenu() {
     qrCodeContainer.innerHTML = '';
     emailInput.value = '';
     frameOverlay.style.backgroundImage = 'none';
+
+    // Hide preview
+    const previewContainer = document.getElementById('frame-preview-container');
+    if (previewContainer) {
+        previewContainer.classList.add('hidden');
+    }
 
     if (video.srcObject) {
         video.srcObject.getTracks().forEach(track => track.stop());
